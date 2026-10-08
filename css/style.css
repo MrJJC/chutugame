@@ -134,7 +134,11 @@ h2{font-family:var(--display);font-weight:700}
 /* ---------- 朗讀：暗場的舞台 ---------- */
 .story-prog{height:2px;margin:0 18px;background:var(--line);border-radius:1px;overflow:hidden}
 .story-prog i{display:block;height:100%;width:0;background:var(--brass);transition:width .3s var(--ease)}
-#story .center{cursor:pointer;gap:20px;padding-bottom:24px}
+/* 以內文為準置中：標題、圖示、計數線收在內文上方那一格的底部，不把內文往下擠。
+   下方多留一點，讓內文落在畫面中間偏上一點（視覺上的中心） */
+#story .center{cursor:pointer;display:grid;grid-template-rows:1fr auto auto 1.25fr;justify-items:center;align-content:stretch;gap:16px;padding-bottom:24px}
+#story .story-label{align-self:end}
+#story .under{align-self:start}
 .story-label{font-size:14px;color:var(--muted);letter-spacing:.12em;min-height:1.4em;display:flex;flex-direction:column;align-items:center;gap:12px}
 /* 標題下方的語音狀態：load 產生中（轉圈）、play 好了等你點（圓圈播放鍵）、on 播放中。沒用到時留著位置，文字才不會跳動 */
 .vico{flex:none;position:relative;width:44px;height:44px;border:2px solid var(--line);border-radius:50%;color:var(--muted)}
