@@ -1,1 +1,3 @@
 _tts_samples/
+# 背景圖的原始檔很大，只放壓縮過的 jpg
+images/*.png

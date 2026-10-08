@@ -1,8 +1,10 @@
 /* 詭鎮劇本朗讀器
-   概念：首頁是節目單，朗讀是暗場的舞台，密謀／場景是放在桌上的實體卡。 */
+   概念：首頁是節目單，朗讀是暗場的舞台，密謀／場景是放在桌上的實體卡。
+   背景是一張卡爾克薩夜景的圖（images/bg1.jpg），上面壓一層暗幕。 */
 :root{
-  --ground:#15110D; --raise:#1F1913; --raise2:#2A2219; --line:#3D3226;
-  --ink:#EDE1C3; --muted:#A39680; --dim:#6B5F4E;
+  --ground:#0D110F; --raise:#191E1A; --raise2:#242A24; --line:#343B33;
+  --scrim:13,17,15;   /* 壓在背景上的暗幕，用 rgba(var(--scrim),α) */
+  --ink:#EDE1C3; --muted:#A5A08A; --dim:#6A6F60;
   --brass:#C9A53A; --brass-hi:#E6C24E;            /* 黃衣之王的黃：主色 */
   --blood:#9A3B30; --blood-hi:#E39A8A;            /* 密謀 */
   --verdigris:#3F7F6C; --verdigris-hi:#97CDB8;    /* 場景 */
@@ -17,15 +19,17 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);overflow-x:clip}
-html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--body)}
+html,body{margin:0;height:100%;background:#070A09;color:var(--ink);font-family:var(--body)}
 body{padding-top:env(safe-area-inset-top,0px);overscroll-behavior-y:none}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease),background-color .15s,border-color .15s,color .15s,opacity .15s}
 button:active{transform:scale(.97)}
 :focus-visible{outline:2px solid var(--brass-hi);outline-offset:3px}
 #app{position:relative;max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
-.fx{position:fixed;inset:0;pointer-events:none;z-index:1}
-.candle{background:radial-gradient(ellipse 80% 38% at 50% 100%,rgba(201,165,58,.10),rgba(201,165,58,0) 70%)}
+.backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;background:#080A08 url(../images/bg1.jpg) center bottom/cover no-repeat}
+/* 暗幕：壓在圖上讓字看得清楚。圖本身上面三分之二就很暗，所以上輕下重，把城市那一段壓下去一些 */
+.veil{position:absolute;inset:0;background:linear-gradient(rgba(var(--scrim),.5) 0,rgba(var(--scrim),.62) 55%,rgba(var(--scrim),.5) 100%)}
+body[data-mode="menu"] .veil{background:linear-gradient(rgba(var(--scrim),.72) 0,rgba(var(--scrim),.8) 60%,rgba(var(--scrim),.7) 100%)}
 
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 @keyframes rise{from{opacity:0;letter-spacing:.5em}to{opacity:1;letter-spacing:.22em}}
@@ -37,7 +41,7 @@ button:active{transform:scale(.97)}
 @keyframes shimmer{to{background-position:-200% 0}}
 
 /* ---------- 頂端列 ---------- */
-.bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;min-height:60px;padding:8px 12px;background:linear-gradient(var(--ground) 72%,rgba(21,17,13,0))}
+.bar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;min-height:60px;padding:8px 12px;background:linear-gradient(rgba(var(--scrim),.92) 60%,rgba(var(--scrim),0))}
 .bar .where{display:flex;flex-direction:column;min-width:0;margin-right:auto;padding-left:4px}
 .bar .where small{font-size:12px;color:var(--muted);letter-spacing:.08em}
 .bar .where strong{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -52,7 +56,7 @@ body[data-mode="menu"] .screen{padding-top:18px}
 body[data-mode="play"] .tabbar{display:none}
 
 /* ---------- 底部分頁 ---------- */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:560px;display:grid;grid-template-columns:repeat(4,1fr);height:calc(var(--tabbar) + var(--safe-b));padding-bottom:var(--safe-b);background:rgba(21,17,13,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:560px;display:grid;grid-template-columns:repeat(4,1fr);height:calc(var(--tabbar) + var(--safe-b));padding-bottom:var(--safe-b);background:rgb(var(--scrim));border-top:1px solid var(--line)}
 .tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:transparent;border:0;color:var(--muted);font-size:12px}
 .tabbar svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .tabbar button[aria-current="page"]{color:var(--brass-hi)}
@@ -94,7 +98,7 @@ h2{font-family:var(--display);font-weight:700}
 .tab{min-height:44px;padding:0 16px;background:transparent;border:1px solid var(--line);border-radius:22px;color:var(--muted);font-size:14px}
 .tab[aria-pressed="true"]{border-color:var(--brass);color:var(--brass-hi)}
 .sc-row{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;width:100%;min-height:68px;padding:10px 8px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;text-align:left;color:var(--ink)}
-.sc-row:active{background:var(--raise);transform:none}
+.sc-row:active{background:rgba(237,225,195,.06);transform:none}
 .sc-row .code{font-family:var(--fell);font-size:24px;color:var(--brass-hi);text-align:center}
 .sc-row strong{display:block;font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.04em}
 .sc-row small{display:block;font-size:13px;color:var(--muted);margin-top:3px}
@@ -106,7 +110,7 @@ h2{font-family:var(--display);font-weight:700}
 .sc-row.story{min-height:54px}
 .sc-row.story .code{font-family:var(--display);font-size:15px;color:var(--muted)}
 .sc-row.story strong{font-size:16px;font-weight:700;color:#D6CAAC}
-.savebar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--raise);border-radius:var(--r)}
+.savebar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(25,30,26,.86);border-radius:var(--r)}
 .savebar div{display:flex;flex-direction:column;margin-right:auto;min-width:0}
 .savebar small{font-size:12px;color:var(--muted)}
 .savebar strong{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -138,7 +142,7 @@ h2{font-family:var(--display);font-weight:700}
 .vico.load::before{display:none}
 .vico.play{border-color:var(--brass-hi);color:var(--brass-hi);animation:blink 1.4s ease-in-out infinite}
 .story-label.ready #storyLabel{color:var(--brass-hi)}
-.passage{margin:0;max-width:24em;font-size:clamp(19px,5.2vw,24px);line-height:2;letter-spacing:.06em}
+.passage{margin:0;max-width:24em;font-size:clamp(19px,5.2vw,24px);line-height:2;letter-spacing:.06em;text-shadow:0 1px 12px rgba(4,6,5,.9)}
 .passage .rest{color:transparent}
 .sent{transition:opacity .45s ease,color .45s ease}
 .sent.todo{opacity:.3}
@@ -146,10 +150,10 @@ h2{font-family:var(--display);font-weight:700}
 .sent.now{opacity:1;color:#FBF1D6}
 .under{height:24px;color:var(--brass-hi);font-size:14px;letter-spacing:.1em}
 /* 念完後的指示與按鈕固定在拇指搆得到的底部 */
-.after{display:none;flex-direction:column;align-items:center;gap:14px;position:sticky;bottom:0;padding:28px 18px calc(18px + var(--safe-b));background:linear-gradient(rgba(21,17,13,0),var(--ground) 26px)}
+.after{display:none;flex-direction:column;align-items:center;gap:14px;position:sticky;bottom:0;padding:28px 18px calc(18px + var(--safe-b));background:linear-gradient(rgba(var(--scrim),0),rgba(var(--scrim),.92) 30px)}
 .after.on{display:flex;animation:screenIn .25s var(--ease)}
 .after .btn{width:100%;max-width:26em}
-.effects{width:100%;max-width:26em;max-height:46vh;overflow-y:auto;background:var(--raise);border-radius:var(--r);padding:16px 18px;text-align:left;font-size:15px;line-height:1.8;color:#D9CDAE}
+.effects{width:100%;max-width:26em;max-height:46vh;overflow-y:auto;background:rgba(25,30,26,.94);border-radius:var(--r);padding:16px 18px;text-align:left;font-size:15px;line-height:1.8;color:#D9CDAE}
 .effects[hidden]{display:none}
 .effects h3{margin:0 0 6px;font-family:var(--body);font-size:13px;font-weight:500;color:var(--brass-hi);letter-spacing:.06em}
 .effects p{margin:8px 0}
@@ -178,7 +182,7 @@ h2{font-family:var(--display);font-weight:700}
 .deck .btn.verd.solid{background:#2F6B5A;border-color:#2F6B5A;color:#F2FBF6}
 .deck .btn:active{background:rgba(43,34,25,.08)}
 .deck .btn.solid:active{opacity:.85}
-.game-foot{position:fixed;left:0;right:0;bottom:0;z-index:20;margin:0 auto;max-width:560px;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px calc(14px + var(--safe-b));background:linear-gradient(rgba(21,17,13,0),var(--ground) 22px)}
+.game-foot{position:fixed;left:0;right:0;bottom:0;z-index:20;margin:0 auto;max-width:560px;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px calc(14px + var(--safe-b));background:linear-gradient(rgba(var(--scrim),0),rgba(var(--scrim),.9) 26px)}
 .game-foot .btn{min-height:52px;padding:0 10px;background:var(--raise);border-color:var(--line);color:var(--ink);font-size:15px}
 .game-foot .btn:active{background:var(--raise2)}
 
@@ -194,7 +198,7 @@ p.note{margin:0;font-size:14px;line-height:1.8;color:var(--muted)}
 .field textarea{min-height:92px;resize:vertical;line-height:1.7}
 .check{display:flex;align-items:center;gap:12px;min-height:48px;font-size:16px;line-height:1.5}
 /* 設定頁：一組一張卡；選項是整列可點的清單 */
-.group{display:flex;flex-direction:column;gap:16px;padding:4px 16px 16px;background:var(--raise);border-radius:14px}
+.group{display:flex;flex-direction:column;gap:16px;padding:4px 16px 16px;background:rgba(25,30,26,.9);border-radius:14px}
 .group[hidden]{display:none}
 .group h3{margin:14px 0 -6px;font-family:var(--body);font-size:14px;font-weight:500;color:var(--brass-hi);letter-spacing:.04em}
 .group .field input:not([type=radio]):not([type=checkbox]):not([type=range]),.group .field select,.group .field textarea{background:var(--ground)}
