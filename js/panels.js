@@ -258,7 +258,8 @@ $('vaultBtn').onclick = async () => {
 $('sealBtn').onclick = async () => {
   const st = $('sealStatus'), key = $('keyIn').value.trim(), pass = $('sealPass').value; st.classList.remove('err');
   if (!key || !pass) { st.classList.add('err'); st.textContent = '上面的金鑰和這裡的通行密碼都要填。'; return; }
-  st.textContent = '加密中…';
+  if (!window.crypto || !crypto.subtle) { st.classList.add('err'); st.textContent = '這個瀏覽器不支援加密（要用 https 開啟，且不能是太舊的瀏覽器）。'; return; }
+  st.textContent = '加密中，手機上大約要等幾秒…'; $('sealOut').value = '';
   try {
     const line = 'const KEY_VAULT = ' + JSON.stringify(await vaultSeal(key, pass)) + ';';
     $('sealOut').value = line; $('sealPass').value = '';

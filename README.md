@@ -64,6 +64,8 @@ python -m http.server 8000
 
 ## 部署
 
+改了 `css/` 或 `js/` 之後，把 `index.html` 裡每個 `?v=數字` 換成新的數字（例如當下的日期時間）再推。瀏覽器會暫存這些檔案，不換的話使用者可能拿到新頁面配舊程式，按鈕沒反應。
+
 推到 `main` 分支後，GitHub Pages（Settings → Pages → Deploy from a branch → `main` / root）會自動更新。
 
 ## 資料來源與聲明
