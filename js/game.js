@@ -190,7 +190,7 @@ function resolution(id, lines = []) {
     goto: to => { if (sc.resolutions[to]) resolution(to, lines); else toHome(); } });
 }
 let pendingAction = null;
-function confirmThen(text, cls, fn) { pendingAction = fn; $('confirmText').textContent = text; $('cYes').className = 'btn solid ' + cls; $('confirm').showModal(); }
+function confirmThen(text, cls, fn, yes = '推進') { pendingAction = fn; $('confirmText').textContent = text; $('cYes').className = 'btn solid ' + cls; $('cYes').textContent = yes; $('confirm').showModal(); }
 $('cNo').onclick = () => { pendingAction = null; $('confirm').close(); };
 $('cYes').onclick = () => { $('confirm').close(); const f = pendingAction; pendingAction = null; if (f) f(); };
 $('undoBtn').onclick = () => { const h = G.history.pop(); if (!h) { toast('已經是第一張了'); return; } G.pos = h; toGame(); };

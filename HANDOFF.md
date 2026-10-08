@@ -29,6 +29,8 @@
 | 文本庫：所有關卡全文、篩選、搜尋、點段落從那裡開始念 | 完成 |
 | 名詞替換：文字＋朗讀／只改讀音、出現次數、常見名字建議、匯出匯入 | 完成 |
 | 存檔：多存檔、自動存進度與結局、戰役日誌、備份代碼 | 完成（localStorage） |
+| 語音存檔：線上語音的音訊存 IndexedDB（`asr-voice`／`clips`），鍵＝模型｜聲音｜語氣｜文字 | 完成；非 Google 模型要 mp3、Gemini 只能 pcm（24kHz 約 2.9 MB／分鐘，玩完整輪約 300 MB） |
+| 線上語音可換模型：模型與聲音都是自由輸入（附建議清單） | 完成；2026-10-08 實測可用：gemini-3.8-flash-tts、gemini-3.8-flash-lite-tts、mai-voice-2.1-flash、fish-audio/s2.1-pro(-free)、qwen-audio-3.0-tts-flash、kokoro-82m |
 | 視覺：暗褐底、Noto Sans TC、置中文字（暗角已依使用者要求移除） | 完成 |
 | 示意劇本（讀取失敗時可用來試介面，原創文字） | 完成 |
 
@@ -94,7 +96,8 @@
 
 - 不要把遊戲劇情原文寫進程式或 repo；一律執行時讀取。
 - 金鑰只存在使用者瀏覽器（localStorage），不寫進程式。
-- 存檔、替換表、設定的 localStorage key：`asr.saves`、`asr.glossary`、`asr.settings`、`asr.last`。
+- 存檔、替換表、設定的 localStorage key：`asr.saves`、`asr.glossary`、`asr.settings`、`asr.last`。語音存檔在 IndexedDB `asr-voice`，不包含在備份代碼裡。
+- `_tts_samples/` 是各模型的試聽檔，已列入 .gitignore，不進 repo。
 - 在預覽視窗或部分公司網路中開啟會因擋外網出現「Failed to fetch」，需用瀏覽器直接開 GitHub Pages 網址。
 
 ## 7. 相關文件

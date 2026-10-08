@@ -30,18 +30,49 @@ function wavFromPcm(buf, rate = 24000, ch = 1) {
   w(36, 'data'); v.setUint32(40, pcm.length, true);
   return new Blob([h, pcm], { type: 'audio/wav' });
 }
+/* 語音存檔：產生過的句子存在這台裝置的瀏覽器（IndexedDB），同一句、同模型同聲音同語氣只付一次錢 */
+const clipDB = new Promise(res => {
+  try {
+    const r = indexedDB.open('asr-voice', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('clips');
+    r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+  } catch (e) { res(null); }
+});
+const clipStore = async mode => { const db = await clipDB; return db ? db.transaction('clips', mode).objectStore('clips') : null; };
+const clipReq = make => new Promise(res => { try { const r = make(); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch (e) { res(null); } });
+async function clipGet(k) { const st = await clipStore('readonly'); return st ? clipReq(() => st.get(k)) : null; }
+async function clipPut(k, v) { const st = await clipStore('readwrite'); if (st) clipReq(() => st.put(v, k)); }
+async function clipClear() { const st = await clipStore('readwrite'); if (st) await clipReq(() => st.clear()); audioCache.clear(); }
+async function clipStats() {
+  const st = await clipStore('readonly'); if (!st) return null;
+  return new Promise(res => {
+    let n = 0, bytes = 0; const r = st.openCursor();
+    r.onsuccess = () => { const c = r.result; if (!c) { res({ n, bytes }); return; } n++; bytes += c.value.buf.byteLength; c.continue(); };
+    r.onerror = () => res(null);
+  });
+}
 function synth(text) {
-  // Gemini 的 TTS 只支援 pcm 輸出；語氣指示要放 instructions，接在文字前面會被念出來
+  // 語氣指示要放 instructions，接在文字前面會被念出來
   const style = (S.style || '').trim();
   const k = `${S.model}|${S.gvoice}|${style}|${text}`;
   if (audioCache.has(k)) return audioCache.get(k);
   const p = (async () => {
-    const r = await fetch('https://openrouter.ai/api/v1/audio/speech', {
-      method: 'POST', headers: { 'Authorization': `Bearer ${S.key}`, 'Content-Type': 'application/json', 'X-Title': 'Arkham Script Reader' },
-      body: JSON.stringify({ model: S.model, input: text, voice: S.gvoice, response_format: 'pcm', ...(style ? { instructions: style } : {}) })
-    });
-    if (!r.ok) { let m = `HTTP ${r.status}`; try { const j = await r.json(); m = (j.error && (j.error.message || j.error)) || m; } catch (e) {} throw new Error(m); }
-    const type = (r.headers.get('content-type') || '').toLowerCase(), buf = await r.arrayBuffer();
+    let clip = await clipGet(k);
+    if (!clip) {
+      // Gemini 只給 pcm；其他模型要 mp3（存檔小很多）。猜錯被拒絕就換另一種再試一次
+      const ask = async fmt => fetch('https://openrouter.ai/api/v1/audio/speech', {
+        method: 'POST', headers: { 'Authorization': `Bearer ${S.key}`, 'Content-Type': 'application/json', 'X-Title': 'Arkham Script Reader' },
+        body: JSON.stringify({ model: S.model, input: text, response_format: fmt, ...(S.gvoice ? { voice: S.gvoice } : {}), ...(style ? { instructions: style } : {}) })
+      });
+      const first = /^google\//.test(S.model) ? 'pcm' : 'mp3';
+      let r = await ask(first), m = '';
+      if (!r.ok) { m = `HTTP ${r.status}`; try { const j = await r.json(); m = (j.error && (j.error.message || j.error)) || m; } catch (e) {} }
+      if (!r.ok && /response_format/.test(m)) { r = await ask(first === 'pcm' ? 'mp3' : 'pcm'); if (r.ok) m = ''; }
+      if (!r.ok) throw new Error(m || `HTTP ${r.status}`);
+      clip = { type: (r.headers.get('content-type') || '').toLowerCase(), buf: await r.arrayBuffer() };
+      clipPut(k, clip);
+    }
+    const { type, buf } = clip;
     if (/mpeg|mp3|wav|ogg|aac|flac/.test(type)) return URL.createObjectURL(new Blob([buf], { type }));
     // 回傳的 Content-Type 像 audio/pcm;rate=24000;channels=1
     return URL.createObjectURL(wavFromPcm(buf, +(/rate=(\d+)/.exec(type) || [])[1] || 24000, +(/channels=(\d+)/.exec(type) || [])[1] || 1));

@@ -138,12 +138,18 @@ function openSettings() {
   $('rateIn').value = S.rate; $('rateOut').textContent = (+S.rate).toFixed(2);
   $('pitchIn').value = S.pitch; $('pitchOut').textContent = (+S.pitch).toFixed(2);
   $('setStatus').textContent = voices.length ? '' : '這台裝置沒有中文語音，會改成只顯示文字。';
+  showClipInfo();
   where('全部循環', '朗讀設定'); show('settings');
 }
+async function showClipInfo() {
+  const st = await clipStats();
+  $('clipInfo').textContent = !st ? '這個瀏覽器無法存檔（例如無痕模式）。' : st.n ? `已存 ${st.n} 句，約 ${(st.bytes / 1048576).toFixed(1)} MB` : '還沒有存檔。';
+}
+$('clipClearBtn').onclick = () => confirmThen('確定清除所有語音存檔？之後重聽會重新產生並計費。', 'blood', async () => { await clipClear(); show('settings'); showClipInfo(); }, '清除');
 function readForm() {
   const e = document.querySelector('input[name=engine]:checked'); S.engine = e ? e.value : 'browser';
   const rv = document.querySelector('input[name=reveal]:checked'); S.reveal = rv ? rv.value : 'sentence';
-  S.key = $('keyIn').value.trim(); S.model = $('modelIn').value.trim() || 'google/gemini-3.8-flash-tts'; S.gvoice = $('gvoiceIn').value; S.style = $('styleIn').value;
+  S.key = $('keyIn').value.trim(); S.model = $('modelIn').value.trim() || 'google/gemini-3.8-flash-tts'; S.gvoice = $('gvoiceIn').value.trim(); S.style = $('styleIn').value;
   S.voiceURI = $('voiceSel').value; S.rate = +$('rateIn').value; S.pitch = +$('pitchIn').value;
   store.set('asr.settings', S);
 }
@@ -153,7 +159,7 @@ $('testBtn').onclick = () => {
   readForm(); const v = pickVoice(), st = $('setStatus');
   if (S.engine === 'openrouter') {
     if (!S.key) { st.textContent = '還沒填 OpenRouter 金鑰。'; return; }
-    st.textContent = '正在產生 Gemini 試聽…';
+    st.textContent = '正在產生試聽…';
     synth(applyGL('夜已經深了。劇院的燈還亮著，可是那裡，應該空無一人。', 'speech')).then(url => { new Audio(url).play(); st.textContent = `播放中：${S.model} · ${S.gvoice}`; })
       .catch(err => { st.textContent = `試聽失敗：${err.message}`; });
     return;
@@ -200,7 +206,7 @@ $('saveDel').onclick = () => {
   const s = save();
   confirmThen(`確定刪除「${s.name}」？這個存檔的進度和戰役日誌都會消失。`, 'blood', () => {
     delete SV.list[s.id]; SV.active = Object.keys(SV.list)[0]; persist(); renderSaves(); show('saves'); $('saveStatus').textContent = `已刪除「${s.name}」。`;
-  });
+  }, '刪除');
 };
 $('backupOut').onclick = async () => {
   const code = JSON.stringify({ v: 1, saves: SV, glossary: GL, settings: S });
@@ -217,7 +223,7 @@ $('backupIn').onclick = () => {
       if (j.glossary) { Object.assign(GL, j.glossary); saveGL(); }
       if (j.settings) { Object.assign(S, j.settings); store.set('asr.settings', S); }
       renderSaves(); show('saves'); $('saveStatus').textContent = '備份已匯入。';
-    });
+    }, '匯入');
   } catch (e) { $('saveStatus').textContent = '備份代碼格式不對，請確認是從這個工具匯出的。'; }
 };
 $('savesDone').onclick = () => { returnTo = 'home'; toHome(); };

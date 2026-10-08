@@ -61,7 +61,7 @@ function playPassage(i) {
       else if (P.list[P.i + 1]) splitSent(applyGL(P.list[P.i + 1].text, 'speech')).slice(0, 1).forEach(t => synth(t).catch(() => {}));
     }).catch(err => {
       if (run !== P.run) return;
-      if (!P.warned) { P.warned = true; toast(`Gemini 語音失敗：${err.message}。先改用裝置語音。`); }
+      if (!P.warned) { P.warned = true; toast(`線上語音失敗：${err.message}。先改用裝置語音。`); }
       deviceOnly(text, cb);
     });
   };
