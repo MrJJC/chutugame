@@ -51,7 +51,13 @@ function playPassage(i) {
   };
   const speakOne = (text, cb, k) => {
     if (P.mute || S.engine !== 'openrouter' || !S.key) { deviceOnly(text, cb); return; }
+    // 線上語音要等幾秒才回來：等的時候在文字下方顯示提示，免得看起來像當掉
+    const under = $('under');
+    const wait = setTimeout(() => { if (run === P.run) { under.textContent = '語音產生中…'; under.classList.add('caret'); } }, 250);
+    const ready = () => { clearTimeout(wait); if (under.textContent === '語音產生中…') { under.textContent = ''; under.classList.remove('caret'); } };
+    P.stopFns.push(ready);
     synth(text).then(url => {
+      ready();
       if (run !== P.run) return;
       const a = new Audio(url); let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
       P.stopFns.push(() => a.pause());
@@ -60,6 +66,7 @@ function playPassage(i) {
       if (sp[k + 1]) synth(sp[k + 1]).catch(() => {});
       else if (P.list[P.i + 1]) splitSent(applyGL(P.list[P.i + 1].text, 'speech')).slice(0, 1).forEach(t => synth(t).catch(() => {}));
     }).catch(err => {
+      ready();
       if (run !== P.run) return;
       if (!P.warned) { P.warned = true; toast(`線上語音失敗：${err.message}。先改用裝置語音。`); }
       deviceOnly(text, cb);
