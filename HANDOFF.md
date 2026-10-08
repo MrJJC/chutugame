@@ -71,7 +71,7 @@ const REAL = [
 
 ## 5. 待辦（依優先順序）
 
-1. 拆成正式專案結構（設定、讀取、播放、畫面分檔），加 README，部署 GitHub Pages。
+1. ~~拆成正式專案結構（設定、讀取、播放、畫面分檔），加 README，部署 GitHub Pages。~~ 完成（2026-10-08）：repo <https://github.com/MrJJC/chutugame>，網站 <https://mrjjc.github.io/chutugame/>，push 到 `main` 即自動更新。
 2. 實測 Gemini 語音：台灣口音、語氣指示會不會被念出、`response_format` 是否回 mp3（已寫 PCM→WAV 備援，假設 24kHz）。
 3. 補完冒險 II–VIII、幕間故事 I（癲狂獎勵／現實之影二選一）、幕間故事 II、尾聲。
 4. 第 VII 關「黑星升起」：兩疊密謀同時進行，遊戲畫面需支援多疊。
