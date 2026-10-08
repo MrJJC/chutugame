@@ -178,13 +178,17 @@ $('saveBtn').onclick = () => { if (testAudio) testAudio.pause(); readForm(); bac
 const TTS_PRESETS = [
   ['Gemini Flash', 'google/gemini-3.8-flash-tts', 'Charon', '100%'],
   ['Gemini Flash Lite', 'google/gemini-3.8-flash-lite-tts', 'Charon', '66%'],
-  ['Fish Audio', 'fish-audio/s2.1-pro', '', '54%'],
+  ['Fish Audio 女聲', 'fish-audio/s2.1-pro', '', '54%'],
   ['Qwen 男聲', 'qwen/qwen-audio-3.0-tts-flash', 'loongjohn', '34%'],
   ['Qwen 女聲', 'qwen/qwen-audio-3.0-tts-flash', 'longanhuan_v3.6', '34%'],
   ['MAI 雲哲', 'microsoft/mai-voice-2.1-flash', 'zh-TW-YunJheNeural', '18%'],
   ['MAI 曉臻', 'microsoft/mai-voice-2.1-flash', 'zh-TW-HsiaoChenNeural', '18%'],
   ['Kokoro', 'hexgrad/kokoro-82m', 'zm_yunjian', '1%'],
-  ['Fish Audio 免費版', 'fish-audio/s2.1-pro-free:free', '', '免費']
+  // Fish Audio 的聲音是它公開聲音庫裡的編號（社群上傳），這三個是標籤為男聲的旁白型聲音
+  ['Fish 免費・台灣男聲', 'fish-audio/s2.1-pro-free:free', 'f4e4280e229b4feba6017a2ffb66149e', '免費'],
+  ['Fish 免費・懸疑男聲', 'fish-audio/s2.1-pro-free:free', 'ef53c4d18a5d46428cf90d2e971c82d8', '免費'],
+  ['Fish 免費・渾厚男聲', 'fish-audio/s2.1-pro-free:free', 'dd43b30d04d9446a94ebe41f301229b5', '免費'],
+  ['Fish 免費・女聲', 'fish-audio/s2.1-pro-free:free', '', '免費']
 ];
 TTS_PRESETS.forEach(([name, , , price], i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${name}（${price}）`; $('presetSel').append(o); });
 { const o = document.createElement('option'); o.value = 'custom'; o.textContent = '自訂（自己填模型代號）'; $('presetSel').append(o); }
