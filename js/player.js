@@ -10,13 +10,22 @@ function render(n) {
   if (n === P.revealed) return;
   P.revealed = n; $('shown').textContent = t.slice(0, n); $('rest').textContent = t.slice(n);
 }
+const HINT_WAIT = '語音產生中…', HINT_TAP = '語音好了，點一下播放';
+// 標題前的語音圖示：'load' 產生中、'play' 好了等玩家點、'on' 播放中、'' 不顯示
+function setVico(state) {
+  const v = $('vico'), u = $('under'); v.hidden = !state; v.className = 'vico ' + state;
+  v.parentNode.classList.toggle('ready', state === 'play');
+  if (state === 'load' || state === 'play') { u.textContent = state === 'load' ? HINT_WAIT : HINT_TAP; u.classList.add('caret'); }
+  else if (u.textContent === HINT_WAIT || u.textContent === HINT_TAP) { u.textContent = ''; u.classList.remove('caret'); }
+}
 function stopPlayback() {
+  P.pendingPlay = null; setVico('');
   P.run++; P.stopFns.forEach(f => { try { f(); } catch (e) {} }); P.stopFns = [];
   if (window.speechSynthesis) speechSynthesis.cancel();
 }
 function narrate(list, after) {
   stopPlayback();
-  P.list = list.filter(x => x.text); P.after = after; P.mute = !!(after && after.mute);
+  P.list = list.filter(x => x.text); P.after = after; P.mute = !!(after && after.mute); P.started = false;
   show('story'); $('after').classList.remove('on');
   if (!P.list.length) {
     // 這一段只有指示、沒有要念的字：清掉上一段留在畫面上的文字
@@ -51,22 +60,23 @@ function playPassage(i) {
   };
   const speakOne = (text, cb, k) => {
     if (P.mute || S.engine !== 'openrouter' || !S.key) { deviceOnly(text, cb); return; }
-    // 線上語音要等幾秒才回來：等的時候在文字下方顯示提示，免得看起來像當掉
-    const under = $('under');
-    const wait = setTimeout(() => { if (run === P.run) { under.textContent = '語音產生中…'; under.classList.add('caret'); } }, 250);
-    const ready = () => { clearTimeout(wait); if (under.textContent === '語音產生中…') { under.textContent = ''; under.classList.remove('caret'); } };
-    P.stopFns.push(ready);
+    // 線上語音要等幾秒才回來：等的時候標題前轉圈。一段朗讀的第一句如果讓人等過，
+    // 好了就換成播放鍵等玩家點（手機上不經點擊也常常不准出聲）；有存檔、馬上就好的直接播
+    const first = !P.started, t0 = performance.now(); P.started = true;
+    const wait = setTimeout(() => { if (run === P.run) setVico('load'); }, 250);
+    P.stopFns.push(() => clearTimeout(wait));
     synth(text).then(url => {
-      ready();
+      clearTimeout(wait);
       if (run !== P.run) return;
       const a = new Audio(url); let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
       P.stopFns.push(() => a.pause());
       a.onended = once; a.onerror = () => deviceOnly(text, once);
-      a.play().catch(() => deviceOnly(text, once));
+      const start = () => { P.pendingPlay = null; setVico('on'); a.play().catch(() => deviceOnly(text, once)); };
+      if (first && performance.now() - t0 > 400) { setVico('play'); P.pendingPlay = start; } else start();
       if (sp[k + 1]) synth(sp[k + 1]).catch(() => {});
       else if (P.list[P.i + 1]) splitSent(applyGL(P.list[P.i + 1].text, 'speech')).slice(0, 1).forEach(t => synth(t).catch(() => {}));
     }).catch(err => {
-      ready();
+      clearTimeout(wait); setVico('');
       if (run !== P.run) return;
       if (!P.warned) { P.warned = true; toast(`線上語音失敗：${err.message}。先改用裝置語音。`); }
       deviceOnly(text, cb);
@@ -74,7 +84,7 @@ function playPassage(i) {
   };
   const step = k => {
     if (run !== P.run) return;
-    if (k >= els.length) { P.done = true; els.forEach(e => e.className = 'sent now'); onPassageEnd(run); return; }
+    if (k >= els.length) { setVico(''); P.done = true; els.forEach(e => e.className = 'sent now'); onPassageEnd(run); return; }
     mark(k);
     speakOne(sp[k], () => { if (run === P.run) step(k + 1); }, k);
   };
@@ -129,6 +139,7 @@ function finishAll() {
 }
 function storyTap() {
   ensureCtx();
+  if (P.pendingPlay) { P.pendingPlay(); return; }
   if (!P.list.length) return;
   if (P.mode !== 'type' && !P.done) {
     stopPlayback(); P.done = true; (P.sentEls || []).forEach(e => e.className = 'sent now');
