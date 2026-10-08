@@ -176,6 +176,9 @@ $('testBtn').onclick = () => {
 $('saveBtn').onclick = () => { if (testAudio) testAudio.pause(); readForm(); back(); };
 // 實測可用的組合：[顯示名稱, 模型, 聲音, 相對 Gemini Flash 的價格]
 const TTS_PRESETS = [
+  ['MiniMax 有聲書男聲', 'minimax/speech-2.8-turbo', 'audiobook_male_1', '136%'],
+  ['MiniMax 男播音員', 'minimax/speech-2.8-turbo', 'Chinese (Mandarin)_Male_Announcer', '136%'],
+  ['MiniMax 電台主持', 'minimax/speech-2.8-turbo', 'Chinese (Mandarin)_Radio_Host', '136%'],
   ['Gemini Flash', 'google/gemini-3.8-flash-tts', 'Charon', '100%'],
   ['Gemini Flash Lite', 'google/gemini-3.8-flash-lite-tts', 'Charon', '66%'],
   ['Fish Audio 女聲', 'fish-audio/s2.1-pro', '', '54%'],
