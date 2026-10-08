@@ -91,7 +91,7 @@
 ## 5. 待辦（依優先順序）
 
 1. ~~拆成正式專案結構（設定、讀取、播放、畫面分檔），加 README，部署 GitHub Pages。~~ 完成（2026-10-08）：repo <https://github.com/MrJJC/chutugame>，網站 <https://mrjjc.github.io/chutugame/>，push 到 `main` 即自動更新。
-2. Gemini 語音：請求格式已修正並驗證（只支援 pcm；語氣走 `instructions`；取樣率讀 Content-Type）。尚待使用者實際聽：台灣口音、語氣是否合適。
+2. ~~Gemini 語音實測。~~ 完成（2026-10-08）：請求格式已修正並用真金鑰驗證（只支援 pcm；語氣走 `instructions`；取樣率讀 Content-Type）。使用者實際聽過，覺得 Gemini Flash Lite 夠好（價格約 Flash 的 66%）。
 3. ~~補完冒險 II–VIII、幕間故事 I、幕間故事 II、尾聲。~~ 完成（2026-10-08）。自動試玩過每關兩輪無錯誤；尚未有人實際對照實體卡玩過 II–VIII。
 4. ~~第 VII 關「黑星升起」：兩疊密謀同時進行，遊戲畫面需支援多疊。~~ 完成（2026-10-08）。
    - 待改進：部分卡背的劇情寫在 `back_text`（混著條件句，例如蒼白面具場景 2、真相幻影場景 1），目前顯示在「照卡面執行」方框、不會朗讀。
@@ -106,6 +106,17 @@
 - 存檔、替換表、設定的 localStorage key：`asr.saves`、`asr.glossary`、`asr.settings`、`asr.last`；`asr.cache` 是劇本快取，可隨時刪。語音存檔在 IndexedDB `asr-voice`，不包含在備份代碼裡。
 - `_tts_samples/` 是各模型的試聽檔，已列入 .gitignore，不進 repo。
 - 在預覽視窗或部分公司網路中開啟會因擋外網出現「Failed to fetch」，需用瀏覽器直接開 GitHub Pages 網址。
+
+## 6b. 改完怎麼驗證（這個專案沒有測試框架，也沒有 Node）
+
+2026-10-08 這輪用的方法，測試腳本放在暫存區沒有留下來，需要時照這個思路重寫：
+
+- 本機起 `python -m http.server`，用無頭 Chrome（`--headless=new --dump-dom` 或 `--screenshot`）開頁面，額外掛一支測試用的 script 把結果寫進 `<pre>` 再讀出來。
+- 手機寬度：無頭 Chrome 視窗最窄約 500px，所以用一個外層頁面放 390px 寬的 iframe 再截圖。
+- 自動試玩：腳本依序點每個對話框的第一個／最後一個選項、每疊牌一路推進，檢查有沒有例外、能不能回到首頁。
+- `--virtual-time-budget` 只會快轉計時器。IndexedDB、WebCrypto、OfflineAudioContext 這類要花真實時間的東西會來不及完成，要改成不帶 virtual time 啟動、把結果 POST 回本機再關掉瀏覽器。
+- 聲音沒辦法聽，只能量：語音用自相關估音高判斷男女聲和飄移；背景音用 OfflineAudioContext 算出來看峰值、各頻段能量（手機喇叭幾乎發不出 200Hz 以下）。
+- 推上去之後 GitHub Pages 約一分鐘生效；記得換 `index.html` 的 `?v=`。
 
 ## 7. 相關文件
 
