@@ -50,14 +50,14 @@ button{cursor:pointer}
 .caret{animation:blink 1.1s ease-in-out infinite}
 /* story */
 #story .center{cursor:pointer;gap:22px}
-.story-label{font-size:13px;color:var(--muted);letter-spacing:.2em;min-height:1.4em;display:flex;align-items:center;justify-content:center;gap:.7em}
-/* 標題前的語音狀態：load 產生中（轉圈）、play 好了等你點（播放鍵）、on 播放中 */
-.vico{flex:none;width:16px;height:16px}
-.vico[hidden]{display:none}
-.vico.load{border:2px solid var(--line);border-top-color:var(--brass-hi);border-radius:50%;animation:spin .9s linear infinite}
-.vico.play,.vico.on{clip-path:polygon(12% 0,100% 50%,12% 100%)}
-.vico.play{width:22px;height:22px;background:var(--brass-hi);animation:blink 1.1s ease-in-out infinite}
-.vico.on{background:var(--muted)}
+.story-label{font-size:13px;color:var(--muted);letter-spacing:.2em;min-height:1.4em;display:flex;flex-direction:column;align-items:center;gap:12px}
+/* 標題下方的語音狀態：load 產生中（轉圈）、play 好了等你點（圓圈播放鍵）、on 播放中。沒用到時留著位置，文字才不會跳動 */
+.vico{flex:none;box-sizing:border-box;position:relative;width:38px;height:38px;border:2px solid var(--line);border-radius:50%;color:var(--muted)}
+.vico[hidden]{display:block;visibility:hidden}
+.vico::before{content:"";position:absolute;inset:0;margin:auto;width:12px;height:14px;background:currentColor;clip-path:polygon(0 0,100% 50%,0 100%);transform:translateX(2px)}
+.vico.load{border-top-color:var(--brass-hi);animation:spin .9s linear infinite}
+.vico.load::before{display:none}
+.vico.play{border-color:var(--brass-hi);color:var(--brass-hi);animation:blink 1.1s ease-in-out infinite}
 .story-label.ready #storyLabel{color:var(--brass-hi)}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.vico{animation:none!important}}
