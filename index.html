@@ -131,8 +131,18 @@
     </div>
     <div class="group" id="grpOnline">
       <h3>線上語音</h3>
+      <div class="field" id="vaultRow" hidden><label for="vaultIn">通行密碼</label>
+        <div class="addrow pair"><input id="vaultIn" type="password" autocomplete="off" placeholder="輸入後自動帶入金鑰"><button class="small-btn" id="vaultBtn">解鎖</button></div>
+        <div class="status" id="vaultStatus" role="status"></div></div>
       <div class="field"><label for="keyIn">OpenRouter 金鑰</label><input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
         <p class="note">只存在這台裝置。沒填或連線失敗時，會自動改用裝置語音。</p></div>
+      <details class="lib-io" id="sealBox">
+        <summary>把金鑰加密後內建（給網站管理者）</summary>
+        <p class="note">先在上面填好金鑰，再設一個通行密碼，按「產生密文」。把產生的那一行交給維護程式的人放進 js/config.js 的 KEY_VAULT。加密在這台裝置上完成，金鑰和密碼都不會送出去。密碼越長越安全，四個字的密碼很容易被試出來。</p>
+        <div class="addrow pair"><input id="sealPass" type="password" autocomplete="off" placeholder="通行密碼" aria-label="通行密碼"><button class="small-btn" id="sealBtn">產生密文</button></div>
+        <textarea id="sealOut" readonly placeholder="密文會出現在這裡" aria-label="密文"></textarea>
+        <div class="status" id="sealStatus" role="status"></div>
+      </details>
       <div class="field"><label for="presetSel">模型與聲音</label><select id="presetSel"></select>
         <p class="note">選了就會套用並試聽。括號裡是相對 Gemini Flash 的價格。</p></div>
       <div class="field" id="customVoice" hidden><label for="modelIn">自訂：OpenRouter 的模型代號</label><input id="modelIn" spellcheck="false">

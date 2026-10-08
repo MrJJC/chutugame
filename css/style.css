@@ -216,10 +216,13 @@ input[type=range]{accent-color:var(--brass-hi);min-height:44px}
 .range{display:grid;grid-template-columns:3em minmax(0,1fr) 3em;gap:10px;align-items:center;font-size:16px}
 .range input{width:100%}
 .range span{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
-#customVoice[hidden]{display:none}
+.field[hidden]{display:none}
 #customVoice label{margin-top:6px}
 .addrow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 .addrow span{color:var(--brass-hi)}
+.addrow.pair{grid-template-columns:minmax(0,1fr) auto}
+#sealBox textarea{width:100%;min-height:96px;margin-top:10px;background:var(--ground);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:13px;line-height:1.5;word-break:break-all}
+#sealBox .addrow{margin-top:12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{min-height:44px;padding:0 14px;background:var(--raise);border:1px solid var(--line);border-radius:22px;color:var(--ink);font-size:15px}
 .chip:active{background:var(--raise2)}
@@ -280,6 +283,29 @@ dialog .acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
 #toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + var(--safe-b) + 14px);transform:translateX(-50%);z-index:70;background:var(--raise2);border:1px solid var(--blood);border-radius:var(--r);color:var(--blood-hi);padding:12px 16px;font-size:15px;line-height:1.6;width:max-content;max-width:calc(100vw - 32px);display:none}
 #toast.on{display:block;animation:screenIn .2s var(--ease)}
 
+/* ---------- 平板 ----------
+   版面和手機一樣，整體放大兩成（字、按鈕、間距一起），欄寬放寬一點。
+   橫放夠寬時：牌桌的卡並排、首頁關卡排兩欄，其餘維持單欄好讀。 */
+@media (min-width:700px){
+  body{zoom:1.2}
+  #app,.tabbar,.game-foot,dialog{max-width:620px}
+  dialog{max-height:70vh}
+  .effects{max-height:38vh}
+}
+@media (min-width:1000px){
+  #app,.tabbar,.game-foot{max-width:860px}
+  dialog{max-width:620px;inset:auto 0 24px 0;border-radius:20px;border:2px solid var(--brass)}
+  #scList{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
+  #decks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start}
+  .doc>*,.lib>*,.doc>h2,.lib>h2{width:100%;max-width:620px;margin-left:auto;margin-right:auto}
+  .passage{max-width:28em}
+  .after .btn,.effects{max-width:30em}
+}
+/* 橫放時背景圖只剩下半截，城市會跑到畫面中間、正好在文字後面，所以暗幕加重 */
+@media (min-aspect-ratio:1/1){
+  .veil{background:rgba(var(--scrim),.74)}
+  body[data-mode="menu"] .veil{background:rgba(var(--scrim),.84)}
+}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }

@@ -229,10 +229,48 @@ function openSettings() {
   syncPreset(); showClipInfo(); syncEngine();
   where('全部循環', '朗讀設定'); show('settings');
 }
+/* ---------- 內建金鑰：用通行密碼加密／解密（PBKDF2 → AES-GCM，都在瀏覽器裡做） ---------- */
+const b64d = t => Uint8Array.from(atob(t), ch => ch.charCodeAt(0)), b64e = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+async function vaultCipher(pass, salt, n) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: n, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+// 密碼錯的話 decrypt 會丟例外
+async function vaultOpen(vault, pass) {
+  const k = await vaultCipher(pass, b64d(vault.s), vault.n);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(vault.i) }, k, b64d(vault.c)));
+}
+async function vaultSeal(key, pass) {
+  const n = 600000, salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const c = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await vaultCipher(pass, salt, n), new TextEncoder().encode(key));
+  return { n, s: b64e(salt), i: b64e(iv), c: b64e(c) };
+}
+$('vaultBtn').onclick = async () => {
+  const st = $('vaultStatus'), pass = $('vaultIn').value; st.classList.remove('err');
+  if (!pass) { st.textContent = '請輸入通行密碼。'; return; }
+  st.textContent = '解鎖中…';
+  try {
+    S.key = await vaultOpen(KEY_VAULT, pass); $('keyIn').value = S.key; $('vaultIn').value = '';
+    document.querySelector('input[name=engine][value=openrouter]').checked = true; S.engine = 'openrouter'; store.set('asr.settings', S);
+    st.textContent = '已帶入金鑰，可以按「試聽」。';
+  } catch (e) { st.classList.add('err'); st.textContent = '密碼不對。'; }
+};
+$('sealBtn').onclick = async () => {
+  const st = $('sealStatus'), key = $('keyIn').value.trim(), pass = $('sealPass').value; st.classList.remove('err');
+  if (!key || !pass) { st.classList.add('err'); st.textContent = '上面的金鑰和這裡的通行密碼都要填。'; return; }
+  st.textContent = '加密中…';
+  try {
+    const line = 'const KEY_VAULT = ' + JSON.stringify(await vaultSeal(key, pass)) + ';';
+    $('sealOut').value = line; $('sealPass').value = '';
+    try { await navigator.clipboard.writeText(line); st.textContent = '已產生並複製。這一行可以公開，但密碼不行。'; } catch (e) { st.textContent = '已產生，請手動複製上面那一行。這一行可以公開，但密碼不行。'; }
+  } catch (e) { st.classList.add('err'); st.textContent = '這個瀏覽器不支援加密：' + e.message; }
+};
+
 // 只顯示目前聲音來源用得到的設定；線上語音失敗會退回裝置語音，所以那組也留著
 function syncEngine() {
   const e = (document.querySelector('input[name=engine]:checked') || {}).value;
   $('grpOnline').hidden = e !== 'openrouter'; $('grpDevice').hidden = e === 'silent';
+  $('vaultRow').hidden = !KEY_VAULT || !!$('keyIn').value;
 }
 document.querySelectorAll('input[name=engine]').forEach(r => { r.onchange = syncEngine; });
 async function showClipInfo() {

@@ -47,6 +47,10 @@ const FALLBACK_TR = {
   'Put the remaining locations (Montparnasse, Gare d’Orsay, Grand Guignol, Canal Saint‐Martin, Père Lachaise Cemetery, Notre‐Dame, and Gardens of Luxembourg) into play. Each investigator begins play at Montparnasse.':
     '將剩餘地點(蒙巴納斯、奧賽火車站、大木偶劇場、聖馬丁運河、拉雪茲神父公墓、巴黎聖母院、盧森堡公園)放置入場。每位調查員從蒙巴納斯開始遊戲。'
 };
+// 內建的 OpenRouter 金鑰，必須是「朗讀設定 → 把金鑰加密後內建」產生的密文，不可以放明文。
+// 這個 repo 和網站都是公開的：明文金鑰一推上去就等於公開，寫在程式裡的密碼比對也擋不住人。
+// 密文要用通行密碼才解得開；密碼不要寫在任何檔案裡。沒有要內建就留 null。
+const KEY_VAULT = null;
 const RAW_CARDS = 'https://raw.githubusercontent.com/zzorba/arkham-cards-data/master/';
 const RAW_ADB = 'https://raw.githubusercontent.com/Kamalisk/arkhamdb-json-data/master/';
 const mirror = u => u.replace('https://raw.githubusercontent.com/zzorba/arkham-cards-data/master/', 'https://cdn.jsdelivr.net/gh/zzorba/arkham-cards-data@master/')
