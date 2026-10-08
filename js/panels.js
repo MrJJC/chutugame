@@ -138,7 +138,7 @@ function openSettings() {
   $('rateIn').value = S.rate; $('rateOut').textContent = (+S.rate).toFixed(2);
   $('pitchIn').value = S.pitch; $('pitchOut').textContent = (+S.pitch).toFixed(2);
   $('setStatus').textContent = voices.length ? '' : '這台裝置沒有中文語音，會改成只顯示文字。';
-  showClipInfo();
+  syncPreset(); showClipInfo();
   where('全部循環', '朗讀設定'); show('settings');
 }
 async function showClipInfo() {
@@ -185,15 +185,19 @@ const TTS_PRESETS = [
   ['Kokoro', 'hexgrad/kokoro-82m', 'zm_yunjian', '1%'],
   ['Fish Audio 免費版', 'fish-audio/s2.1-pro-free:free', '', '免費']
 ];
-TTS_PRESETS.forEach(([name, model, voice, price]) => {
-  const b = document.createElement('button'); b.className = 'chip'; b.textContent = name;
-  const sm = document.createElement('small'); sm.textContent = price; b.append(sm);
-  b.onclick = () => {
-    document.querySelector('input[name=engine][value=openrouter]').checked = true;
-    $('modelIn').value = model; $('gvoiceIn').value = voice; $('testBtn').click();
-  };
-  $('ttsPresets').append(b);
-});
+TTS_PRESETS.forEach(([name, , , price], i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${name}（${price}）`; $('presetSel').append(o); });
+{ const o = document.createElement('option'); o.value = 'custom'; o.textContent = '自訂（自己填模型代號）'; $('presetSel').append(o); }
+// 讓下拉選單反映目前欄位裡的模型和聲音；對不上任何一組就是自訂
+function syncPreset() {
+  const i = TTS_PRESETS.findIndex(([, model, voice]) => model === $('modelIn').value.trim() && voice === $('gvoiceIn').value.trim());
+  $('presetSel').value = i < 0 ? 'custom' : i; $('customVoice').hidden = i >= 0;
+}
+$('presetSel').onchange = () => {
+  const p = TTS_PRESETS[$('presetSel').value];
+  $('customVoice').hidden = !!p; if (!p) return;
+  document.querySelector('input[name=engine][value=openrouter]').checked = true;
+  $('modelIn').value = p[1]; $('gvoiceIn').value = p[2]; $('testBtn').click();
+};
 
 /* ---------- saves screen ---------- */
 function renderSaves() {
