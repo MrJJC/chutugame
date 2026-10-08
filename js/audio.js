@@ -21,27 +21,30 @@ const pickVoice = () => voices.find(v => v.voiceURI === S.voiceURI) || voices[0]
 
 /* ---------- Gemini via OpenRouter ---------- */
 const audioCache = new Map();
-function wavFromPcm(buf, rate = 24000) {
+function wavFromPcm(buf, rate = 24000, ch = 1) {
   const pcm = new Uint8Array(buf), h = new ArrayBuffer(44), v = new DataView(h);
   const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
   w(0, 'RIFF'); v.setUint32(4, 36 + pcm.length, true); w(8, 'WAVE'); w(12, 'fmt ');
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, ch, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * ch * 2, true); v.setUint16(32, ch * 2, true); v.setUint16(34, 16, true);
   w(36, 'data'); v.setUint32(40, pcm.length, true);
   return new Blob([h, pcm], { type: 'audio/wav' });
 }
 function synth(text) {
-  const style = (S.style || '').trim(), input = style ? `${style}\n${text}` : text;
-  const k = `${S.model}|${S.gvoice}|${input}`;
+  // Gemini 的 TTS 只支援 pcm 輸出；語氣指示要放 instructions，接在文字前面會被念出來
+  const style = (S.style || '').trim();
+  const k = `${S.model}|${S.gvoice}|${style}|${text}`;
   if (audioCache.has(k)) return audioCache.get(k);
   const p = (async () => {
     const r = await fetch('https://openrouter.ai/api/v1/audio/speech', {
       method: 'POST', headers: { 'Authorization': `Bearer ${S.key}`, 'Content-Type': 'application/json', 'X-Title': 'Arkham Script Reader' },
-      body: JSON.stringify({ model: S.model, input, voice: S.gvoice, response_format: 'mp3' })
+      body: JSON.stringify({ model: S.model, input: text, voice: S.gvoice, response_format: 'pcm', ...(style ? { instructions: style } : {}) })
     });
     if (!r.ok) { let m = `HTTP ${r.status}`; try { const j = await r.json(); m = (j.error && (j.error.message || j.error)) || m; } catch (e) {} throw new Error(m); }
     const type = (r.headers.get('content-type') || '').toLowerCase(), buf = await r.arrayBuffer();
-    return URL.createObjectURL(/pcm|l16|octet/.test(type) ? wavFromPcm(buf) : new Blob([buf], { type: type || 'audio/mpeg' }));
+    if (/mpeg|mp3|wav|ogg|aac|flac/.test(type)) return URL.createObjectURL(new Blob([buf], { type }));
+    // 回傳的 Content-Type 像 audio/pcm;rate=24000;channels=1
+    return URL.createObjectURL(wavFromPcm(buf, +(/rate=(\d+)/.exec(type) || [])[1] || 24000, +(/channels=(\d+)/.exec(type) || [])[1] || 1));
   })();
   audioCache.set(k, p); p.catch(() => audioCache.delete(k));
   return p;
