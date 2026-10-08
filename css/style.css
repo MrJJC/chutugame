@@ -48,8 +48,10 @@ body[data-mode="menu"] .veil{background:linear-gradient(rgba(var(--scrim),.72) 0
 .icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;background:transparent;border:0;border-radius:50%}
 .icon-btn:active{background:var(--raise2)}
 .icon-btn svg{width:22px;height:22px;stroke:var(--muted);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.icon-btn[aria-pressed="true"]{background:var(--raise2)}
 .icon-btn[aria-pressed="true"] svg{stroke:var(--brass-hi)}
+/* 背景音關掉時，喇叭上畫一條斜線 */
+#soundBtn{position:relative}
+#soundBtn[aria-pressed="false"]::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:2px;margin:-1px 0 0 -13px;background:var(--muted);border-radius:1px;transform:rotate(-45deg);box-shadow:0 2px 0 var(--ground)}
 /* 選單層不需要返回和朗讀控制；遊玩層不顯示底部分頁 */
 body[data-mode="menu"] .bar{display:none}
 body[data-mode="menu"] .screen{padding-top:18px}

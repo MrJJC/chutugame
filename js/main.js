@@ -5,7 +5,13 @@ $('menuBtn').onclick = () => { $('ambVol').value = S.ambVol == null ? .5 : S.amb
 $('ambVol').oninput = () => setAmbVol(+$('ambVol').value);
 $('playMenuClose').onclick = () => $('playMenu').close();
 $('playMenu').addEventListener('click', e => { if (e.target === $('playMenu')) $('playMenu').close(); });
-$('soundBtn').onclick = () => { if (amb) { stopAmb(); $('soundBtn').setAttribute('aria-pressed', 'false'); } else if (startAmb()) $('soundBtn').setAttribute('aria-pressed', 'true'); };
+// 背景音預設開；開關的狀態會記住
+const ambWanted = () => S.ambOn !== false;
+$('soundBtn').setAttribute('aria-pressed', ambWanted());
+$('soundBtn').onclick = () => {
+  S.ambOn = !ambWanted(); store.set('asr.settings', S); $('soundBtn').setAttribute('aria-pressed', S.ambOn);
+  if (S.ambOn) startAmb(); else stopAmb();
+};
 $('homeBtn').onclick = () => { if (!CYCLES.length) return; toHome(); };
 $('tabHome').onclick = () => { if (CYCLES.length) toHome(); else show('home'); };
 $('textBtn').onclick = () => { if (!CYCLES.length) { toast('劇本還沒讀取完成'); return; } openLibrary(false); };

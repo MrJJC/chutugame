@@ -7,7 +7,10 @@ const TAB_OF = { home: 'tabHome', saves: 'tabHome', library: 'textBtn', glossary
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   current = id; window.scrollTo(0, 0);
-  document.body.dataset.mode = PLAY_SCREENS.includes(id) ? 'play' : 'menu';
+  const play = PLAY_SCREENS.includes(id);
+  document.body.dataset.mode = play ? 'play' : 'menu';
+  // 背景音只在遊玩層響。進遊玩層一定是玩家點出來的，瀏覽器才准開始出聲
+  if (play && S.ambOn !== false && !amb) startAmb(); else if (!play && amb) stopAmb();
   document.querySelectorAll('.tabbar button').forEach(b => { if (b.id === TAB_OF[id]) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
 }
 function where(a, b) { $('whereSmall').textContent = a; $('whereBig').textContent = b; }
