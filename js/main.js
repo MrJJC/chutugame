@@ -1,7 +1,8 @@
 'use strict';
 /* ---------- top bar + tab bar ---------- */
 $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').setAttribute('aria-pressed', auto); };
-$('menuBtn').onclick = () => $('playMenu').showModal();
+$('menuBtn').onclick = () => { $('ambVol').value = S.ambVol == null ? .5 : S.ambVol; $('playMenu').showModal(); };
+$('ambVol').oninput = () => setAmbVol(+$('ambVol').value);
 $('playMenuClose').onclick = () => $('playMenu').close();
 $('playMenu').addEventListener('click', e => { if (e.target === $('playMenu')) $('playMenu').close(); });
 $('soundBtn').onclick = () => { if (amb) { stopAmb(); $('soundBtn').setAttribute('aria-pressed', 'false'); } else if (startAmb()) $('soundBtn').setAttribute('aria-pressed', 'true'); };
