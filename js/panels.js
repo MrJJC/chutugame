@@ -155,12 +155,14 @@ function readForm() {
 }
 $('rateIn').oninput = () => { $('rateOut').textContent = (+$('rateIn').value).toFixed(2); };
 $('pitchIn').oninput = () => { $('pitchOut').textContent = (+$('pitchIn').value).toFixed(2); };
+let testAudio = null;
 $('testBtn').onclick = () => {
   readForm(); const v = pickVoice(), st = $('setStatus');
   if (S.engine === 'openrouter') {
     if (!S.key) { st.textContent = '還沒填 OpenRouter 金鑰。'; return; }
     st.textContent = '正在產生試聽…';
-    synth(applyGL('夜已經深了。劇院的燈還亮著，可是那裡，應該空無一人。', 'speech')).then(url => { new Audio(url).play(); st.textContent = `播放中：${S.model} · ${S.gvoice}`; })
+    if (testAudio) testAudio.pause();
+    synth(applyGL('夜已經深了。劇院的燈還亮著，可是那裡，應該空無一人。', 'speech')).then(url => { if (testAudio) testAudio.pause(); testAudio = new Audio(url); testAudio.play().catch(() => {}); st.textContent = `播放中：${S.model}${S.gvoice ? ' · ' + S.gvoice : ''}`; showClipInfo(); })
       .catch(err => { st.textContent = `試聽失敗：${err.message}`; });
     return;
   }
@@ -171,7 +173,27 @@ $('testBtn').onclick = () => {
   u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch; speechSynthesis.speak(u);
   st.textContent = `試聽中：${v.name}`;
 };
-$('saveBtn').onclick = () => { readForm(); back(); };
+$('saveBtn').onclick = () => { if (testAudio) testAudio.pause(); readForm(); back(); };
+// 實測可用的組合：[顯示名稱, 模型, 聲音, 相對 Gemini Flash 的價格]
+const TTS_PRESETS = [
+  ['Gemini Flash', 'google/gemini-3.8-flash-tts', 'Charon', '100%'],
+  ['Gemini Flash Lite', 'google/gemini-3.8-flash-lite-tts', 'Charon', '66%'],
+  ['Fish Audio', 'fish-audio/s2.1-pro', '', '54%'],
+  ['Qwen', 'qwen/qwen-audio-3.0-tts-flash', 'longanhuan_v3.6', '34%'],
+  ['MAI 雲哲', 'microsoft/mai-voice-2.1-flash', 'zh-TW-YunJheNeural', '18%'],
+  ['MAI 曉臻', 'microsoft/mai-voice-2.1-flash', 'zh-TW-HsiaoChenNeural', '18%'],
+  ['Kokoro', 'hexgrad/kokoro-82m', 'zm_yunjian', '1%'],
+  ['Fish Audio 免費版', 'fish-audio/s2.1-pro-free:free', '', '免費']
+];
+TTS_PRESETS.forEach(([name, model, voice, price]) => {
+  const b = document.createElement('button'); b.className = 'chip'; b.textContent = name;
+  const sm = document.createElement('small'); sm.textContent = price; b.append(sm);
+  b.onclick = () => {
+    document.querySelector('input[name=engine][value=openrouter]').checked = true;
+    $('modelIn').value = model; $('gvoiceIn').value = voice; $('testBtn').click();
+  };
+  $('ttsPresets').append(b);
+});
 
 /* ---------- saves screen ---------- */
 function renderSaves() {

@@ -127,6 +127,7 @@
     <div class="field"><label for="keyIn">OpenRouter 金鑰（只存在這台裝置）</label><input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…"></div>
     <div class="field"><label for="modelIn">線上語音模型（OpenRouter 的模型代號，可以自己填）</label><input id="modelIn" list="modelList" spellcheck="false">
       <datalist id="modelList"><option value="google/gemini-3.8-flash-tts">Gemini Flash</option><option value="google/gemini-3.8-flash-lite-tts">Gemini Flash Lite（約便宜三分之一）</option><option value="microsoft/mai-voice-2.1-flash">MAI Voice Flash（約 Gemini Flash 的兩成價）</option><option value="fish-audio/s2.1-pro-free:free">Fish Audio 免費版</option></datalist></div>
+    <div class="field"><label>直接試聽（點一下就套用那個模型和聲音並播放；百分比是相對 Gemini Flash 的價格）</label><div class="chips" id="ttsPresets"></div></div>
     <div class="field"><label for="gvoiceIn">聲音（名稱依模型而定）</label><input id="gvoiceIn" list="voiceList" spellcheck="false">
       <datalist id="voiceList"><option>Charon</option><option>Algenib</option><option>Enceladus</option><option>Fenrir</option><option>Iapetus</option><option>Orus</option><option>Umbriel</option><option>Kore</option><option>Aoede</option><option value="zh-TW-YunJheNeural">MAI Voice</option><option value="zh-TW-HsiaoChenNeural">MAI Voice</option></datalist>
       <p class="note">換模型時要一起換聲音：Gemini 用 Charon 這類名字；MAI Voice 用 zh-TW-YunJheNeural 或 zh-TW-HsiaoChenNeural；Fish Audio 留空就用它的預設聲音。</p></div>

@@ -30,7 +30,7 @@
 | 名詞替換：文字＋朗讀／只改讀音、出現次數、常見名字建議、匯出匯入 | 完成 |
 | 存檔：多存檔、自動存進度與結局、戰役日誌、備份代碼 | 完成（localStorage） |
 | 語音存檔：線上語音的音訊存 IndexedDB（`asr-voice`／`clips`），鍵＝模型｜聲音｜語氣｜文字 | 完成；非 Google 模型要 mp3、Gemini 只能 pcm（24kHz 約 2.9 MB／分鐘，玩完整輪約 300 MB） |
-| 線上語音可換模型：模型與聲音都是自由輸入（附建議清單） | 完成；2026-10-08 實測可用：gemini-3.8-flash-tts、gemini-3.8-flash-lite-tts、mai-voice-2.1-flash、fish-audio/s2.1-pro(-free)、qwen-audio-3.0-tts-flash、kokoro-82m |
+| 線上語音可換模型：模型與聲音都是自由輸入（附建議清單），另有「直接試聽」按鈕一鍵套用並播放（`TTS_PRESETS` 在 `js/panels.js`） | 完成；2026-10-08 實測可用：gemini-3.8-flash-tts、gemini-3.8-flash-lite-tts、mai-voice-2.1-flash、fish-audio/s2.1-pro(-free)、qwen-audio-3.0-tts-flash、kokoro-82m |
 | 視覺：暗褐底、Noto Sans TC、置中文字（暗角已依使用者要求移除） | 完成 |
 | 示意劇本（讀取失敗時可用來試介面，原創文字） | 完成 |
 

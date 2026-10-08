@@ -1,6 +1,9 @@
 'use strict';
 /* ---------- settings ---------- */
-const S = Object.assign({ engine: 'browser', voiceURI: '', rate: 0.85, pitch: 0.8, reveal: 'sentence', key: '', model: 'google/gemini-3.8-flash-tts', gvoice: 'Charon', style: '請用台灣口音的國語，以低沉、緩慢、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣，朗讀以下文字：' }, store.get('asr.settings', {}));
+const S = Object.assign({ engine: 'browser', voiceURI: '', rate: 1, pitch: 0.9, reveal: 'sentence', key: '', model: 'google/gemini-3.8-flash-tts', gvoice: 'Charon', style: '請用台灣口音的國語，以略為低沉、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣朗讀。' }, store.get('asr.settings', {}));
+// 舊預設（低沉、緩慢）沒被使用者改過的話，換成新的預設
+if (S.style === '請用台灣口音的國語，以低沉、緩慢、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣，朗讀以下文字：') S.style = '請用台灣口音的國語，以略為低沉、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣朗讀。';
+if (S.rate === 0.85 && S.pitch === 0.8) { S.rate = 1; S.pitch = 0.9; }
 let auto = true;
 
 /* ---------- saves（存檔） ---------- */
