@@ -50,7 +50,7 @@ const FALLBACK_TR = {
 // 內建的 OpenRouter 金鑰，必須是「朗讀設定 → 把金鑰加密後內建」產生的密文，不可以放明文。
 // 這個 repo 和網站都是公開的：明文金鑰一推上去就等於公開，寫在程式裡的密碼比對也擋不住人。
 // 密文要用通行密碼才解得開；密碼不要寫在任何檔案裡。沒有要內建就留 null。
-const KEY_VAULT = {"n":600000,"s":"Ieu6u8mCck8loSDE/ixxEA==","i":"0kwo/U3TyDM6WJ9o","c":"dQx5TGgac18UPeg7yZwRAQjjb6mGCwYzFRFNvKIrzTjCzNXXg8tSJlLD1aChMIKEX+ZoDfpOmfkRGp182OcUdzOUYi0NtqyR/VZD4WYQEtu62R/jykL1eZk="};
+const KEY_VAULT = {"n":600000,"s":"G1FYt3IU4muF5NHdyerB3A==","i":"TNovXIc5LfAJPVat","c":"6tUcu+TjDtz/2Ul+Y7+Jev6RFMSAx5eAai/nJDIC8FNypauCFX8eS7VGCEFzXXbaOb1hX5BbS4xUs4kI9gqomlr2sGEUOtshpXKcg6TKdf1bWqLDY9y+OBg="};
 const RAW_CARDS = 'https://raw.githubusercontent.com/zzorba/arkham-cards-data/master/';
 const RAW_ADB = 'https://raw.githubusercontent.com/Kamalisk/arkhamdb-json-data/master/';
 const mirror = u => u.replace('https://raw.githubusercontent.com/zzorba/arkham-cards-data/master/', 'https://cdn.jsdelivr.net/gh/zzorba/arkham-cards-data@master/')
