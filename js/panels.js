@@ -66,7 +66,8 @@ function openLibrary(restore) {
 }
 $('libCycle').onchange = () => { LIB.cycle = $('libCycle').value; LIB.scenario = 'all'; fillLibSelects(); renderLibrary(); };
 $('libScenario').onchange = () => { LIB.scenario = $('libScenario').value; renderLibrary(); };
-$('libSearch').oninput = () => { LIB.q = $('libSearch').value; renderLibrary(); };
+let libT;
+$('libSearch').oninput = () => { clearTimeout(libT); libT = setTimeout(() => { LIB.q = $('libSearch').value; renderLibrary(); }, 160); };
 const OVERLAYS = ['library', 'glossary', 'settings', 'story', 'saves'];
 function back() {
   if (returnTo === 'game') toGame(); else if (returnTo === 'library') openLibrary(true);
@@ -74,7 +75,12 @@ function back() {
 }
 
 /* ---------- glossary screen ---------- */
-const allText = () => allScenarios().flatMap(sc => sections(sc).flatMap(s => s.groups.flatMap(g => g.items.map(i => i.text).concat(g.fx || '')))).join('\n');
+// 全部文本接成一串很花時間，劇本沒換就沿用上次的結果
+let allTextMemo = [null, ''];
+const allText = () => {
+  if (allTextMemo[0] !== CYCLES) allTextMemo = [CYCLES, allScenarios().flatMap(sc => sections(sc).flatMap(s => s.groups.flatMap(g => g.items.map(i => i.text).concat(g.fx || '')))).join('\n')];
+  return allTextMemo[1];
+};
 const countIn = w => w ? allText().split(w).length - 1 : 0;
 function renderGlossary() {
   const box = $('gRules'); box.replaceChildren();

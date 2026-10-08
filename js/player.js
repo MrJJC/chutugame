@@ -23,13 +23,14 @@ function stopPlayback() {
   P.run++; P.stopFns.forEach(f => { try { f(); } catch (e) {} }); P.stopFns = [];
   if (window.speechSynthesis) speechSynthesis.cancel();
 }
+function setCount(i) { $('storyCount').textContent = `${i + 1} / ${P.list.length}`; $('storyBar').style.width = (i + 1) / P.list.length * 100 + '%'; }
 function narrate(list, after) {
   stopPlayback();
   P.list = list.filter(x => x.text); P.after = after; P.mute = !!(after && after.mute); P.started = false;
   show('story'); $('after').classList.remove('on');
   if (!P.list.length) {
     // 這一段只有指示、沒有要念的字：清掉上一段留在畫面上的文字
-    ['storyLabel', 'storyCount', 'rest', 'under'].forEach(id => { $(id).textContent = ''; }); $('shown').replaceChildren();
+    ['storyLabel', 'storyCount', 'rest', 'under'].forEach(id => { $(id).textContent = ''; }); $('shown').replaceChildren(); $('storyBar').style.width = '100%';
     finishAll(); return;
   }
   playPassage(0);
@@ -44,7 +45,7 @@ function playPassage(i) {
   const disp = raw.map(s => applyGL(s, 'display')), sp = raw.map(s => applyGL(s, 'speech'));
   P.cur = disp.join('');
   $('storyLabel').textContent = item.label || '';
-  $('storyCount').textContent = `${i + 1} / ${P.list.length}`;
+  setCount(i);
   $('under').textContent = ''; $('under').classList.remove('caret');
   const box = $('shown'); box.replaceChildren(); $('rest').textContent = '';
   const els = disp.map(t => { const s = document.createElement('span'); s.className = 'sent todo'; s.textContent = t; box.append(s); return s; });
@@ -97,7 +98,7 @@ function playTyped(i) {
   const item = P.list[i], text = applyGL(item.text, 'display'), speech = applyGL(item.text, 'speech'), run = P.run;
   P.cur = text;
   $('storyLabel').textContent = item.label || '';
-  $('storyCount').textContent = `${i + 1} / ${P.list.length}`;
+  setCount(i);
   $('under').textContent = ''; $('under').classList.remove('caret');
   render(0);
   const cum = weights(text), total = cum[cum.length - 1] || 1;

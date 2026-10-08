@@ -5,34 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>詭鎮劇本朗讀器 · 卡爾克薩之路</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%AF%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IM+Fell+English+SC&display=swap">
+<meta name="theme-color" content="#15110D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body data-mode="menu">
 <div class="fx candle"></div>
 
 <div id="app">
   <header class="bar">
-    <button class="icon-btn" id="homeBtn" aria-label="選擇關卡"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <button class="icon-btn play-only" id="homeBtn" aria-label="回到選擇關卡"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="where"><small id="whereSmall"></small><strong id="whereBig"></strong></div>
-    <button class="pill" id="autoBtn" aria-pressed="true">自動</button>
-    <button class="icon-btn" id="soundBtn" aria-pressed="false" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
-    <button class="icon-btn" id="textBtn" aria-label="文本庫"><svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg></button>
-    <button class="icon-btn" id="glossBtn" aria-label="名詞替換"><svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h7M4 17h5"/><path d="M15 15l3-8 3 8M16 13h4"/></svg></button>
-    <button class="icon-btn" id="gearBtn" aria-label="朗讀設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+    <button class="pill play-only" id="autoBtn" aria-pressed="true" aria-label="念完自動接下一段">自動</button>
+    <button class="icon-btn play-only" id="soundBtn" aria-pressed="false" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+    <button class="icon-btn play-only" id="gearBtn" aria-label="朗讀設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
   </header>
 
   <section class="screen home" id="home">
+    <div class="playbill">
+      <h1 id="cycleName">卡爾克薩之路</h1>
+      <p id="cycleProg" role="status">正在讀取劇本…</p>
+      <div class="progbar"><i id="cycleBar"></i></div>
+    </div>
+    <button class="resume" id="continueBtn" hidden><small>繼續上次的進度</small><strong id="continueText"></strong></button>
+    <div class="tabs" id="cycleTabs" role="group" aria-label="循環" hidden></div>
+    <div id="scList"></div>
+    <div class="skeleton" id="skeleton" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <p class="status" id="loadMsg" role="status" hidden></p>
+    <div class="settings-actions" id="loadBtns" hidden><button class="btn" id="retryLoad">重新讀取</button><button class="small-btn" id="useSample">先用示意劇本試介面</button></div>
     <div class="savebar">
       <div><small>目前存檔</small><strong id="saveName"></strong></div>
       <button class="small-btn" id="savesBtn">存檔與日誌</button>
     </div>
-    <button class="btn solid" id="continueBtn" hidden></button>
-    <h2>選擇關卡</h2>
-    <div class="tabs" id="cycleTabs" role="group" aria-label="循環"></div>
-    <div id="scList"></div>
-    <p class="status" id="loadMsg" role="status" hidden></p>
-    <div class="settings-actions" id="loadBtns" hidden><button class="btn" id="retryLoad">重新讀取</button><button class="small-btn" id="useSample">先用示意劇本試介面</button></div>
   </section>
 
   <section class="screen" id="title">
@@ -46,6 +52,7 @@
   </section>
 
   <section class="screen" id="story">
+    <div class="story-prog" aria-hidden="true"><i id="storyBar"></i></div>
     <div class="center" id="storyTap" role="button" tabindex="0" aria-label="繼續">
       <div class="story-label"><span id="storyLabel"></span><span class="vico" id="vico" hidden></span></div>
       <div class="rule"><span id="storyCount"></span></div>
@@ -138,15 +145,21 @@
     <div class="settings-actions"><button class="btn" id="testBtn">試聽</button><button class="btn solid" id="saveBtn">完成</button></div>
     <div class="status" id="setStatus" role="status"></div>
   </section>
+  <nav class="tabbar" aria-label="主選單">
+    <button id="tabHome"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>關卡</button>
+    <button id="textBtn"><svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>文本庫</button>
+    <button id="glossBtn"><svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h7M4 17h5"/><path d="M15 15l3-8 3 8M16 13h4"/></svg>名詞替換</button>
+    <button id="tabSet"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>設定</button>
+  </nav>
 </div>
 
 <dialog id="confirm"><p id="confirmText"></p>
   <div class="acts"><button class="btn" id="cNo">取消</button><button class="btn solid" id="cYes">推進</button></div></dialog>
 <dialog id="resPick"><p>卡面寫著「進入（→結局 N）」，或所有調查員都已撤退／被擊敗時，選擇對應的結局：</p>
-  <div id="resList" style="display:grid;gap:8px;margin-bottom:14px"></div>
+  <div id="resList"></div>
   <div class="acts"><button class="btn" id="resCancel">取消</button></div></dialog>
 <dialog id="branchPick"><p id="branchText"></p>
-  <div id="branchList" style="display:grid;gap:8px"></div></dialog>
+  <div id="branchList"></div></dialog>
 <div id="toast" role="alert"></div>
 
 <script src="js/config.js"></script>

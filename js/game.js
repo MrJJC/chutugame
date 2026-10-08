@@ -17,30 +17,33 @@ function resume() {
 function renderHome() {
   const s = save();
   $('saveName').textContent = s.name;
-  const cb = $('continueBtn');
-  if (s.progress && findSc(s.progress.scenarioId)) { cb.hidden = false; cb.textContent = `繼續：${progressText(s.progress)}`; } else cb.hidden = true;
+  const cb = $('continueBtn'), resumable = s.progress && findSc(s.progress.scenarioId);
+  cb.hidden = !resumable; if (resumable) $('continueText').textContent = progressText(s.progress);
   if (!CYCLES.length) return;
   if (!homeCycle || !CYCLES.some(c => c.id === homeCycle)) homeCycle = CYCLES[0].id;
-  const tabs = $('cycleTabs'); tabs.replaceChildren();
+  const tabs = $('cycleTabs'); tabs.replaceChildren(); tabs.hidden = CYCLES.length < 2;
   CYCLES.forEach(cy => {
     const b = document.createElement('button'); b.className = 'tab'; b.textContent = cy.name;
     b.setAttribute('aria-pressed', cy.id === homeCycle);
     b.onclick = () => { homeCycle = cy.id; renderHome(); };
     tabs.append(b);
   });
+  const cycle = CYCLES.find(c => c.id === homeCycle), finished = cycle.scenarios.filter(sc => s.results[sc.id]).length;
+  $('cycleName').textContent = cycle.name;
+  $('cycleProg').textContent = finished ? `已完成 ${finished}／${cycle.scenarios.length} 關` : `共 ${cycle.scenarios.length} 關，從序章開始`;
+  $('cycleBar').style.width = finished / cycle.scenarios.length * 100 + '%';
   const list = $('scList'); list.replaceChildren();
-  CYCLES.find(c => c.id === homeCycle).scenarios.forEach(sc => {
-    const b = document.createElement('button'); b.className = 'sc-row';
+  cycle.scenarios.forEach(sc => {
+    const b = document.createElement('button'); b.className = 'sc-row' + (sc.kind === 'story' ? ' story' : '');
     const code = document.createElement('span'); code.className = 'code'; code.textContent = sc.code;
     const mid = document.createElement('span'); const st = document.createElement('strong'); st.textContent = sc.title;
     const count = kind => sc.decks.filter(d => d.kind === kind).reduce((n, d) => n + d.cards.length, 0);
-    const sm = document.createElement('small'); sm.textContent = sc.kind === 'story' ? '劇情朗讀' : `${count('agenda')} 張密謀 · ${count('act')} 張場景 · ${resIds(sc).length} 種結局`;
+    const sm = document.createElement('small'); sm.textContent = sc.kind === 'story' ? '劇情朗讀' : `密謀 ${count('agenda')} 張，場景 ${count('act')} 張`;
     mid.append(st, sm);
     const go = document.createElement('span'); go.className = 'go';
     const doing = s.progress && s.progress.scenarioId === sc.id, done = s.results[sc.id];
     if (doing) { go.textContent = '進行中'; go.classList.add('doing'); }
-    else if (done) { go.textContent = `已完成 · ${resLabel(done.res)}`; go.classList.add('done'); }
-    else go.textContent = '開始';
+    else if (done) { go.textContent = sc.kind === 'story' ? '已讀完' : `完成，${resLabel(done.res)}`; go.classList.add('done'); }
     b.append(code, mid, go);
     b.onclick = () => { CUR = sc; store.set('asr.last', sc.id); if (doing) resume(); else toTitle(); };
     list.append(b);
@@ -83,7 +86,7 @@ function startIntro() {
   const sc = CUR;
   G.pos = sc.decks.map(d => { const s = deckStart(d); return s.length ? s[0][1] : -1; }); G.history = [];
   saveProgress('intro');
-  where(sc.cycle.name, `${sc.title} · 開場`);
+  where(`${sc.cycle.name} · 開場`, sc.title);
   if (sc.kind === 'story') {
     const lines = [];
     if (sc.mute) toast('依規則這一段不念出聲，請照畫面指示由該看的人自己讀');
@@ -102,7 +105,7 @@ function pickStart(k) {
     cands.map(([c, j]) => ({ label: applyGL(c.name, 'display'), fn: () => { G.pos[k] = j; pickStart(k + 1); } })));
 }
 function toGame() {
-  stopPlayback(); where(CUR.cycle.name, `${CUR.title} · 進行中`);
+  stopPlayback(); where(`${CUR.cycle.name} · 進行中`, CUR.title);
   saveProgress('game');
   const box = $('decks'); box.replaceChildren();
   CUR.decks.forEach((d, k) => {
@@ -115,8 +118,12 @@ function toGame() {
     q('strong').textContent = applyGL(c.name, 'display'); q('.need').textContent = c.need; q('.flavor').textContent = applyGL(c.flavor, 'display');
     read.classList.add(cls); read.textContent = '重念';
     read.onclick = () => { ensureCtx(); narrate(cardItems(c, d.label), { label: '回到遊戲', then: toGame }); };
-    adv.classList.add(cls); adv.textContent = `${d.label}推進`;
-    adv.onclick = () => confirmThen(`確定推進${d.label}？翻過去就會看到下一張的內容。`, cls, () => advance(k));
+    adv.classList.add(cls); adv.textContent = `推進${d.label}`;
+    // 確認後整張卡翻過去，再開始念背面
+    adv.onclick = () => confirmThen(`確定推進${d.label}？翻過去就會看到下一張的內容。`, cls, () => {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { advance(k); return; }
+      el.classList.add('flip'); setTimeout(() => advance(k), 400);
+    }, '翻開');
     box.append(el);
   });
   show('game');
@@ -184,7 +191,7 @@ function pickBranch(word, from, cands, done) {
 function resolution(id, lines = []) {
   const sc = CUR, r = sc.resolutions[id];
   saveResult(sc, id, lines);
-  where(sc.cycle.name, `${sc.title} · ${resLabel(id)}`);
+  where(`${sc.cycle.name} · ${resLabel(id)}`, sc.title);
   runFlow(r.flow, { label: resLabel(id), effectsTitle: '本關結算', doneLabel: '回到選擇關卡', then: toHome,
     onNotes: l => { lines.push(...l); saveResult(sc, id, lines); },
     goto: to => { if (sc.resolutions[to]) resolution(to, lines); else toHome(); } });

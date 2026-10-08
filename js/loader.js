@@ -15,7 +15,13 @@ function normalize(cycles) {
   return cycles;
 }
 
+// 讀取進度：boot() 用它畫進度條
+const LOADING = { done: 0, total: 0, on: null };
 async function fetchOne(u, kind) {
+  LOADING.total++;
+  try { return await fetchRaw(u, kind); } finally { LOADING.done++; if (LOADING.on) LOADING.on(); }
+}
+async function fetchRaw(u, kind) {
   let last;
   for (const url of [u, mirror(u)]) {
     try {
