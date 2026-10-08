@@ -16,11 +16,9 @@
 
 <div id="app">
   <header class="bar">
-    <button class="icon-btn play-only" id="homeBtn" aria-label="回到選擇關卡"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="icon-btn" id="homeBtn" aria-label="回到選擇關卡"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="where"><small id="whereSmall"></small><strong id="whereBig"></strong></div>
-    <button class="pill play-only" id="autoBtn" aria-pressed="true" aria-label="念完自動接下一段">自動</button>
-    <button class="icon-btn play-only" id="soundBtn" aria-pressed="false" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
-    <button class="icon-btn play-only" id="gearBtn" aria-label="朗讀設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+    <button class="icon-btn" id="menuBtn" aria-label="朗讀選項"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
   </header>
 
   <section class="screen home" id="home">
@@ -118,32 +116,41 @@
 
   <section class="screen doc" id="settings">
     <h2>朗讀設定</h2>
-    <p class="note">選線上語音但沒填金鑰、或連線失敗時，會自動改用裝置語音。</p>
-    <fieldset class="field">
-      <legend>聲音</legend>
-      <label class="radio"><input type="radio" name="engine" value="openrouter"> 線上語音（OpenRouter，需要金鑰，預設 Gemini）</label>
-      <label class="radio"><input type="radio" name="engine" value="browser"> 裝置內建語音（Apple 美佳等）</label>
-      <label class="radio"><input type="radio" name="engine" value="silent"> 不出聲，只顯示文字</label>
-    </fieldset>
-    <fieldset class="field">
-      <legend>文字呈現</legend>
-      <label class="radio"><input type="radio" name="reveal" value="sentence"> 整段顯示，念到哪一句就亮哪一句（建議）</label>
-      <label class="radio"><input type="radio" name="reveal" value="full"> 整段直接顯示，不做任何效果</label>
-      <label class="radio"><input type="radio" name="reveal" value="type"> 逐字打字（和語音只能大約對上）</label>
-    </fieldset>
-    <div class="field"><label for="keyIn">OpenRouter 金鑰（只存在這台裝置）</label><input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…"></div>
-    <div class="field"><label for="presetSel">線上語音的模型與聲音（選了就套用並試聽；百分比是相對 Gemini Flash 的價格）</label><select id="presetSel"></select></div>
-    <div class="field" id="customVoice" hidden><label for="modelIn">自訂：OpenRouter 的模型代號</label><input id="modelIn" spellcheck="false">
-      <label for="gvoiceIn">自訂：聲音名稱（依模型而定，有些模型可留空）</label><input id="gvoiceIn" spellcheck="false"></div>
-    <div class="field"><label for="styleIn">語氣指示（聽到被念出來就清空；有些模型不理會）</label><textarea id="styleIn"></textarea></div>
-    <div class="field"><label for="voiceSel">裝置語音（沒填金鑰或線上語音失敗時使用）</label><select id="voiceSel"></select>
-      <p class="note">預設使用 Apple 的台灣中文語音「美佳」。iPhone／iPad 可到「設定 → 輔助使用 → 朗讀內容 → 聲音 → 中文（台灣）」下載「美佳（增強版）」，聲音會自然很多，下載後回來在這裡選它。</p></div>
-    <div class="range"><label for="rateIn">語速</label><input type="range" id="rateIn" min="0.6" max="1.2" step="0.05"><span id="rateOut"></span></div>
-    <div class="range"><label for="pitchIn">音調</label><input type="range" id="pitchIn" min="0.5" max="1.2" step="0.05"><span id="pitchOut"></span></div>
-    <div class="field"><label>語音存檔（線上語音產生過的句子存在這台裝置，重聽不再收費）</label>
-      <div class="settings-actions" style="align-items:center"><span class="status" id="clipInfo"></span><button class="small-btn" id="clipClearBtn">清除語音存檔</button></div></div>
-    <div class="settings-actions"><button class="btn" id="testBtn">試聽</button><button class="btn solid" id="saveBtn">完成</button></div>
+    <div class="group">
+      <h3>聲音來源</h3>
+      <label class="opt"><input type="radio" name="engine" value="browser"><span><b>裝置語音</b><small>免費，用這台裝置內建的聲音</small></span></label>
+      <label class="opt"><input type="radio" name="engine" value="openrouter"><span><b>線上語音</b><small>比較自然，需要 OpenRouter 金鑰，依用量計費</small></span></label>
+      <label class="opt"><input type="radio" name="engine" value="silent"><span><b>不出聲</b><small>只顯示文字</small></span></label>
+    </div>
+    <div class="group" id="grpOnline">
+      <h3>線上語音</h3>
+      <div class="field"><label for="keyIn">OpenRouter 金鑰</label><input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
+        <p class="note">只存在這台裝置。沒填或連線失敗時，會自動改用裝置語音。</p></div>
+      <div class="field"><label for="presetSel">模型與聲音</label><select id="presetSel"></select>
+        <p class="note">選了就會套用並試聽。括號裡是相對 Gemini Flash 的價格。</p></div>
+      <div class="field" id="customVoice" hidden><label for="modelIn">自訂：OpenRouter 的模型代號</label><input id="modelIn" spellcheck="false">
+        <label for="gvoiceIn">自訂：聲音名稱（依模型而定，有些可留空）</label><input id="gvoiceIn" spellcheck="false"></div>
+      <div class="field"><label for="styleIn">語氣指示</label><textarea id="styleIn"></textarea>
+        <p class="note">聽到這段話被念出來就清空。有些模型不理會它。</p></div>
+      <div class="field"><label>語音存檔</label>
+        <p class="note">產生過的句子存在這台裝置，重聽不再收費。</p>
+        <div class="settings-actions"><span class="status" id="clipInfo"></span><button class="small-btn" id="clipClearBtn">清除</button></div></div>
+    </div>
+    <div class="group" id="grpDevice">
+      <h3>裝置語音</h3>
+      <div class="field"><label for="voiceSel">聲音</label><select id="voiceSel"></select>
+        <p class="note">iPhone／iPad 可到「設定 → 輔助使用 → 朗讀內容 → 聲音 → 中文（台灣）」下載「美佳（增強版）」，會自然很多，下載後回來這裡選它。</p></div>
+      <div class="range"><label for="rateIn">語速</label><input type="range" id="rateIn" min="0.6" max="1.2" step="0.05"><span id="rateOut"></span></div>
+      <div class="range"><label for="pitchIn">音調</label><input type="range" id="pitchIn" min="0.5" max="1.2" step="0.05"><span id="pitchOut"></span></div>
+    </div>
+    <div class="group">
+      <h3>文字呈現</h3>
+      <label class="opt"><input type="radio" name="reveal" value="sentence"><span><b>念到哪一句亮哪一句</b><small>整段先顯示，建議用這個</small></span></label>
+      <label class="opt"><input type="radio" name="reveal" value="full"><span><b>整段直接顯示</b><small>不做任何效果</small></span></label>
+      <label class="opt"><input type="radio" name="reveal" value="type"><span><b>逐字打字</b><small>只搭配裝置語音，和聲音只能大約對上</small></span></label>
+    </div>
     <div class="status" id="setStatus" role="status"></div>
+    <div class="settings-actions two"><button class="btn" id="testBtn">試聽</button><button class="btn solid" id="saveBtn">完成</button></div>
   </section>
   <nav class="tabbar" aria-label="主選單">
     <button id="tabHome"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>關卡</button>
@@ -153,6 +160,11 @@
   </nav>
 </div>
 
+<dialog id="playMenu" aria-label="朗讀選項">
+  <button class="sheet-row" id="autoBtn" aria-pressed="true"><span>念完自動接下一段</span><i class="switch"></i></button>
+  <button class="sheet-row" id="soundBtn" aria-pressed="false"><span>背景音</span><i class="switch"></i></button>
+  <button class="sheet-row" id="gearBtn"><span>朗讀設定</span><span class="chev">›</span></button>
+  <div class="acts"><button class="btn" id="playMenuClose">關閉</button></div></dialog>
 <dialog id="confirm"><p id="confirmText"></p>
   <div class="acts"><button class="btn" id="cNo">取消</button><button class="btn solid" id="cYes">推進</button></div></dialog>
 <dialog id="resPick"><p>卡面寫著「進入（→結局 N）」，或所有調查員都已撤退／被擊敗時，選擇對應的結局：</p>

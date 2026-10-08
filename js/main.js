@@ -1,12 +1,15 @@
 'use strict';
 /* ---------- top bar + tab bar ---------- */
-$('autoBtn').onclick = () => { auto = !auto; $('autoBtn').setAttribute('aria-pressed', auto); $('autoBtn').textContent = auto ? '自動' : '手動'; };
+$('autoBtn').onclick = () => { auto = !auto; $('autoBtn').setAttribute('aria-pressed', auto); };
+$('menuBtn').onclick = () => $('playMenu').showModal();
+$('playMenuClose').onclick = () => $('playMenu').close();
+$('playMenu').addEventListener('click', e => { if (e.target === $('playMenu')) $('playMenu').close(); });
 $('soundBtn').onclick = () => { if (amb) { stopAmb(); $('soundBtn').setAttribute('aria-pressed', 'false'); } else if (startAmb()) $('soundBtn').setAttribute('aria-pressed', 'true'); };
 $('homeBtn').onclick = () => { if (!CYCLES.length) return; toHome(); };
 $('tabHome').onclick = () => { if (CYCLES.length) toHome(); else show('home'); };
 $('textBtn').onclick = () => { if (!CYCLES.length) { toast('劇本還沒讀取完成'); return; } openLibrary(false); };
 $('glossBtn').onclick = () => { if (!CYCLES.length) { toast('劇本還沒讀取完成'); return; } openGlossary(); };
-$('gearBtn').onclick = openSettings;
+$('gearBtn').onclick = () => { $('playMenu').close(); openSettings(); };
 $('tabSet').onclick = openSettings;
 // 點對話框外面的暗處＝取消（必須選一項的分支對話框除外）
 $('confirm').addEventListener('click', e => { if (e.target === $('confirm')) $('cNo').click(); });

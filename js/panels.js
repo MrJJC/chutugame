@@ -144,9 +144,15 @@ function openSettings() {
   $('rateIn').value = S.rate; $('rateOut').textContent = (+S.rate).toFixed(2);
   $('pitchIn').value = S.pitch; $('pitchOut').textContent = (+S.pitch).toFixed(2);
   $('setStatus').textContent = voices.length ? '' : '這台裝置沒有中文語音，會改成只顯示文字。';
-  syncPreset(); showClipInfo();
+  syncPreset(); showClipInfo(); syncEngine();
   where('全部循環', '朗讀設定'); show('settings');
 }
+// 只顯示目前聲音來源用得到的設定；線上語音失敗會退回裝置語音，所以那組也留著
+function syncEngine() {
+  const e = (document.querySelector('input[name=engine]:checked') || {}).value;
+  $('grpOnline').hidden = e !== 'openrouter'; $('grpDevice').hidden = e === 'silent';
+}
+document.querySelectorAll('input[name=engine]').forEach(r => { r.onchange = syncEngine; });
 async function showClipInfo() {
   const st = await clipStats();
   $('clipInfo').textContent = !st ? '這個瀏覽器無法存檔（例如無痕模式）。' : st.n ? `已存 ${st.n} 句，約 ${(st.bytes / 1048576).toFixed(1)} MB` : '還沒有存檔。';
@@ -209,7 +215,7 @@ function syncPreset() {
 $('presetSel').onchange = () => {
   const p = TTS_PRESETS[$('presetSel').value];
   $('customVoice').hidden = !!p; if (!p) return;
-  document.querySelector('input[name=engine][value=openrouter]').checked = true;
+  document.querySelector('input[name=engine][value=openrouter]').checked = true; syncEngine();
   $('modelIn').value = p[1]; $('gvoiceIn').value = p[2]; $('testBtn').click();
 };
 

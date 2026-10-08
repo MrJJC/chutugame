@@ -16,7 +16,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px);overflow-x:clip}
 html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--body)}
 body{padding-top:env(safe-area-inset-top,0px);overscroll-behavior-y:none}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -46,8 +46,6 @@ button:active{transform:scale(.97)}
 .icon-btn svg{width:22px;height:22px;stroke:var(--muted);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .icon-btn[aria-pressed="true"]{background:var(--raise2)}
 .icon-btn[aria-pressed="true"] svg{stroke:var(--brass-hi)}
-.pill{flex:none;height:36px;padding:0 14px;background:transparent;border:1px solid var(--line);border-radius:18px;color:var(--muted);font-size:13px}
-.pill[aria-pressed="true"]{border-color:var(--brass);color:var(--brass-hi)}
 /* 選單層不需要返回和朗讀控制；遊玩層不顯示底部分頁 */
 body[data-mode="menu"] .bar{display:none}
 body[data-mode="menu"] .screen{padding-top:18px}
@@ -185,19 +183,35 @@ h2{font-family:var(--display);font-weight:700}
 .game-foot .btn:active{background:var(--raise2)}
 
 /* ---------- 表單與文件型畫面 ---------- */
-.doc,.lib,#settings{padding:4px 18px 40px;gap:18px}
-.doc h2,.lib h2,#settings h2{margin:6px 0 0;font-size:26px;letter-spacing:.06em}
+.doc,.lib{padding:4px 18px 40px;gap:18px}
+.doc h2,.lib h2{margin:6px 0 0;font-size:26px;letter-spacing:.06em}
+.doc>*,.lib>*,.group>*,.field>*{min-width:0}
 p.note{margin:0;font-size:14px;line-height:1.8;color:var(--muted)}
 .field{display:flex;flex-direction:column;gap:8px}
 .field label,.field legend{font-size:15px;font-weight:500;color:var(--ink);line-height:1.6}
 /* 輸入欄至少 16px，iPhone 才不會一點就把整個畫面放大 */
 .field input:not([type=radio]):not([type=checkbox]):not([type=range]),.field select,.field textarea,.lib-ctl select,.lib-ctl input,.addrow input{width:100%;background:var(--raise);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;min-height:48px;font-size:16px}
 .field textarea{min-height:92px;resize:vertical;line-height:1.7}
-fieldset.field{border:0;padding:0;margin:0}
-.radio,.check{display:flex;align-items:center;gap:12px;min-height:48px;font-size:16px;line-height:1.5}
+.check{display:flex;align-items:center;gap:12px;min-height:48px;font-size:16px;line-height:1.5}
+/* 設定頁：一組一張卡；選項是整列可點的清單 */
+.group{display:flex;flex-direction:column;gap:16px;padding:4px 16px 16px;background:var(--raise);border-radius:14px}
+.group[hidden]{display:none}
+.group h3{margin:14px 0 -6px;font-family:var(--body);font-size:14px;font-weight:500;color:var(--brass-hi);letter-spacing:.04em}
+.group .field input:not([type=radio]):not([type=checkbox]):not([type=range]),.group .field select,.group .field textarea{background:var(--ground)}
+.opt{display:flex;align-items:center;gap:14px;min-height:60px;padding:8px 0;border-top:1px solid var(--line);cursor:pointer}
+.group h3+.opt{border-top:0}
+.opt+.opt{margin-top:-16px}
+.opt span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.opt b{font-size:16px;font-weight:500}
+.opt small{font-size:13px;line-height:1.5;color:var(--muted)}
+select{-webkit-appearance:none;appearance:none;text-overflow:ellipsis;padding-right:40px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A39680' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 12px center!important;background-size:18px!important}
+.settings-actions.two{display:grid;grid-template-columns:1fr 1fr}
+.settings-actions .status{flex:1;min-height:0;align-self:center}
 input[type=radio],input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--brass-hi)}
 input[type=range]{accent-color:var(--brass-hi);min-height:44px}
-.range{display:grid;grid-template-columns:3em 1fr 3em;gap:10px;align-items:center;font-size:15px}
+.range{display:grid;grid-template-columns:3em minmax(0,1fr) 3em;gap:10px;align-items:center;font-size:16px}
+.range input{width:100%}
+.range span{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
 #customVoice[hidden]{display:none}
 #customVoice label{margin-top:6px}
 .addrow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
@@ -225,7 +239,7 @@ input[type=range]{accent-color:var(--brass-hi);min-height:44px}
 .lib-sc h3 small{display:block;font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400;margin-bottom:2px}
 .lib-sec{margin:16px 0 2px;font-size:14px;font-weight:500;color:var(--blood-hi)}
 .sub{margin:14px 0 4px;font-size:13px;color:var(--brass-hi)}
-.para{display:block;width:100%;text-align:left;background:transparent;border:0;border-left:2px solid transparent;border-radius:0 8px 8px 0;padding:8px 10px;margin:0 -12px;font-size:17px;line-height:1.9;letter-spacing:.03em;color:var(--ink)}
+.para{display:block;width:calc(100% + 24px);text-align:left;background:transparent;border:0;border-left:2px solid transparent;border-radius:0 8px 8px 0;padding:8px 10px;margin:0 -12px;font-size:17px;line-height:1.9;letter-spacing:.03em;color:var(--ink)}
 .para:hover,.para:active{border-left-color:var(--brass);background:rgba(201,165,58,.08);transform:none}
 .fxline{margin:4px 0;padding-left:10px;font-size:14px;line-height:1.8;color:var(--muted)}
 mark{background:transparent;color:inherit;border-bottom:1px dashed var(--brass-hi)}
@@ -237,6 +251,16 @@ dialog[open]{animation:sheetUp .26s var(--ease)}
 dialog::backdrop{background:rgba(0,0,0,.62);animation:fadeIn .2s}
 dialog p{margin:0 0 18px;font-size:17px;line-height:1.75}
 dialog .acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
+/* 遊玩中的選項：一列一項，開關在右邊 */
+.sheet-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:60px;padding:0 4px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--ink);font-size:17px;text-align:left}
+.sheet-row:active{transform:none;background:var(--raise2)}
+.sheet-row:focus-visible{outline-offset:-2px}
+.sheet-row .chev{font-size:24px;color:var(--dim)}
+.switch{flex:none;position:relative;width:48px;height:28px;border-radius:14px;background:var(--line);transition:background-color .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--muted);transition:transform .2s var(--ease),background-color .2s}
+[aria-pressed="true"]>.switch{background:var(--brass-hi)}
+[aria-pressed="true"]>.switch::after{transform:translateX(20px);background:#1B1509}
+#playMenu .acts{margin-top:18px}
 #branchList,#resList{display:grid;gap:10px}
 #resList{margin-bottom:14px}
 #branchList .btn,#resList .btn{padding:12px 16px;letter-spacing:.03em;line-height:1.55;text-align:left}
