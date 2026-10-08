@@ -16,7 +16,6 @@ button{cursor:pointer}
 #app{position:relative;max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
 /* film effects */
 .fx{position:fixed;inset:0;pointer-events:none;z-index:50}
-.vignette{box-shadow:inset 0 0 160px 70px #050403}
 .candle{background:radial-gradient(ellipse 80% 38% at 50% 100%,rgba(190,140,70,.14),rgba(190,140,70,0) 70%)}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 @keyframes rise{from{opacity:0;letter-spacing:.6em}to{opacity:1;letter-spacing:.35em}}
