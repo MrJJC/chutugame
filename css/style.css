@@ -238,6 +238,14 @@ input[type=range]{accent-color:var(--brass-hi);min-height:44px}
 .lib-ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .lib-ctl input{grid-column:1/-1}
 .lib-count{font-size:13px;color:var(--muted)}
+.lib-io{background:rgba(25,30,26,.9);border-radius:var(--r);padding:0 14px}
+.lib-io summary{min-height:48px;display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;list-style:none}
+.lib-io summary::-webkit-details-marker{display:none}
+.lib-io summary::before{content:"›";font-size:20px;color:var(--brass-hi);transition:transform .2s var(--ease)}
+.lib-io[open] summary::before{transform:rotate(90deg)}
+.lib-io .settings-actions{margin:12px 0}
+.lib-io .status{padding-bottom:10px}
+.small-btn[hidden]{display:none}
 .lib-sc{margin-top:18px;padding-top:14px;border-top:1px solid var(--brass)}
 .lib-sc h3{margin:0;font-family:var(--display);font-size:21px;letter-spacing:.04em}
 .lib-sc h3 small{display:block;font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400;margin-bottom:2px}

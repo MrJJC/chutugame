@@ -27,6 +27,11 @@ function saveResult(sc, resId, lines) {
 }
 const fmtTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
+/* ---------- overrides（逐段校對） ----------
+   key 是原文的雜湊，value 是使用者改過的版本。從文本庫匯出、改完再匯入。 */
+const OV = store.get('asr.overrides', {});
+const saveOV = () => store.set('asr.overrides', OV);
+
 /* ---------- glossary ---------- */
 const GL = Object.assign({ rules: [], quotes: true }, store.get('asr.glossary', {}));
 const saveGL = () => store.set('asr.glossary', GL);

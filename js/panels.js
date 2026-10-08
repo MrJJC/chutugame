@@ -61,13 +61,95 @@ function renderLibrary() {
 }
 function openLibrary(restore) {
   if (!OVERLAYS.includes(current)) { returnTo = current; if (!restore) { LIB.cycle = CUR.cycle.id; LIB.scenario = CUR.id; } }
-  stopPlayback(); fillLibSelects(); renderLibrary(); where('全部循環', '文本庫'); show('library');
+  stopPlayback(); fillLibSelects(); renderLibrary(); showOvCount(); where('全部循環', '文本庫'); show('library');
   if (restore) window.scrollTo(0, LIB.scroll);
 }
 $('libCycle').onchange = () => { LIB.cycle = $('libCycle').value; LIB.scenario = 'all'; fillLibSelects(); renderLibrary(); };
 $('libScenario').onchange = () => { LIB.scenario = $('libScenario').value; renderLibrary(); };
 let libT;
 $('libSearch').oninput = () => { clearTimeout(libT); libT = setTimeout(() => { LIB.q = $('libSearch').value; renderLibrary(); }, 160); };
+/* ---------- 文本匯出／匯入（逐段校對） ---------- */
+const textHash = t => { let h = 0x811c9dc5; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(16).padStart(8, '0'); };
+// 一關裡所有可以校對的文字欄位。卡名不在內：同名的卡靠名字認版本，改名字請用名詞替換
+function textSlots(sc) {
+  const out = [];
+  const walk = (nodes, where) => nodes.forEach(n => {
+    if (n.k === 'ask') n.opts.forEach(o => walk(o.nodes, where));
+    else if (n.k !== 'goto' && n.text) out.push({ obj: n, key: 'text', where: `${where}${n.k === 'note' ? '（指示）' : ''}` });
+  });
+  walk(sc.flow, '開場');
+  sc.decks.forEach(d => d.cards.forEach(c => [['flavor', '正面'], ['backFlavor', '背面'], ['backText', '背面效果']].forEach(([key, side]) => {
+    if (c[key]) out.push({ obj: c, key, where: `${d.label} ${ROMAN[c.stage]} ${side}：${side === '正面' ? c.name : c.backName || c.name}` });
+  })));
+  resIds(sc).forEach(id => walk(sc.resolutions[id].flow, resLabel(id)));
+  return out;
+}
+const origOf = (obj, key) => obj['_' + key] == null ? obj[key] : obj['_' + key];
+// 把校對過的版本套到目前載入的劇本上；原文留在 _text 這類欄位，才還原得回來
+function applyOverrides() {
+  allScenarios().forEach(sc => textSlots(sc).forEach(({ obj, key }) => {
+    const orig = origOf(obj, key); obj['_' + key] = orig;
+    obj[key] = OV[textHash(orig)] || orig;
+  }));
+  allTextMemo = [null, ''];
+}
+const libPool = () => { const pool = LIB.cycle === 'all' ? allScenarios() : CYCLES.find(c => c.id === LIB.cycle).scenarios; return LIB.scenario === 'all' ? pool : pool.filter(sc => sc.id === LIB.scenario); };
+function exportText(pool) {
+  const seen = new Set();
+  const lines = ['# 詭鎮劇本朗讀器 文本 v1', '# 只改每段的文字。「##」和「@」開頭的行是記號，不要改也不要刪。', '# 改完把整份檔案匯入；沒改的段落會被略過，所以只留你改過的幾段也可以。', ''];
+  pool.forEach(sc => {
+    lines.push(`## ${sc.cycle.name} ${sc.code} ${sc.title}`, '');
+    textSlots(sc).forEach(({ obj, key, where }) => {
+      const h = textHash(origOf(obj, key)); if (seen.has(h)) return; seen.add(h);
+      lines.push(`@${h} ${where}`, obj[key], '');
+    });
+  });
+  return lines.join('\n');
+}
+function importText(raw) {
+  const blocks = {}; let cur = null;
+  raw.replace(/^\uFEFF/, '').split(/\r?\n/).forEach(line => {
+    const m = /^@([0-9a-f]{8})(\s|$)/.exec(line);
+    if (m) { cur = m[1]; blocks[cur] = []; }
+    else if (/^##\s/.test(line)) cur = null;
+    else if (cur) blocks[cur].push(line);
+  });
+  const originals = {};
+  allScenarios().forEach(sc => textSlots(sc).forEach(({ obj, key }) => { const o = origOf(obj, key); originals[textHash(o)] = o; }));
+  let changed = 0, restored = 0, unknown = 0;
+  Object.entries(blocks).forEach(([h, ls]) => {
+    const text = ls.join('\n').trim();
+    if (!(h in originals)) { unknown++; return; }
+    if (!text) return;
+    if (text === originals[h].trim()) { if (OV[h]) { delete OV[h]; restored++; } }
+    else if (OV[h] !== text) { OV[h] = text; changed++; }
+  });
+  saveOV(); applyOverrides();
+  return { blocks: Object.keys(blocks).length, changed, restored, unknown };
+}
+function showOvCount(msg) {
+  const n = Object.keys(OV).length;
+  $('libReset').hidden = !n; $('libReset').textContent = `還原全部（${n} 段）`;
+  $('libIoStatus').textContent = msg || (n ? `目前有 ${n} 段用的是你改過的版本。` : '');
+}
+$('libExport').onclick = () => {
+  const pool = libPool(), name = pool.length === 1 ? pool[0].title : LIB.cycle === 'all' ? '全部' : pool[0].cycle.name;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([exportText(pool)], { type: 'text/plain;charset=utf-8' }));
+  a.download = `劇本文本_${name}.txt`; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  showOvCount(`已匯出 ${pool.length} 個關卡的文字。`);
+};
+$('libImportBtn').onclick = () => $('libImport').click();
+$('libImport').onchange = async () => {
+  const f = $('libImport').files[0]; if (!f) return;
+  const r = importText(await f.text()); $('libImport').value = '';
+  renderLibrary();
+  showOvCount(!r.blocks ? '這個檔案裡找不到「@」開頭的記號，請確認是從這裡匯出的文字檔。'
+    : `讀到 ${r.blocks} 段：套用 ${r.changed} 段修改` + (r.restored ? `、還原 ${r.restored} 段` : '') + (r.unknown ? `、有 ${r.unknown} 段對不上目前的劇本（已略過）` : '') + '。');
+};
+$('libReset').onclick = () => confirmThen('確定還原全部？你改過的段落會變回資料庫原本的文字。', 'blood', () => {
+  Object.keys(OV).forEach(k => delete OV[k]); saveOV(); applyOverrides(); renderLibrary(); show('library'); showOvCount('已全部還原。');
+}, '還原');
 const OVERLAYS = ['library', 'glossary', 'settings', 'story', 'saves'];
 function back() {
   if (returnTo === 'game') toGame(); else if (returnTo === 'library') openLibrary(true);
@@ -255,7 +337,7 @@ $('saveDel').onclick = () => {
   }, '刪除');
 };
 $('backupOut').onclick = async () => {
-  const code = JSON.stringify({ v: 1, saves: SV, glossary: GL, settings: S });
+  const code = JSON.stringify({ v: 1, saves: SV, glossary: GL, settings: S, overrides: OV });
   $('backupBox').value = code;
   try { await navigator.clipboard.writeText(code); $('saveStatus').textContent = '備份代碼已複製到剪貼簿，貼到記事本或傳給自己保存。'; }
   catch (e) { $('saveStatus').textContent = '備份代碼在下方欄位，請手動複製保存。'; }
@@ -268,6 +350,7 @@ $('backupIn').onclick = () => {
       SV.active = j.saves.active; SV.list = j.saves.list; persist();
       if (j.glossary) { Object.assign(GL, j.glossary); saveGL(); }
       if (j.settings) { Object.assign(S, j.settings); store.set('asr.settings', S); }
+      if (j.overrides) { Object.keys(OV).forEach(k => delete OV[k]); Object.assign(OV, j.overrides); saveOV(); applyOverrides(); }
       renderSaves(); show('saves'); $('saveStatus').textContent = '備份已匯入。';
     }, '匯入');
   } catch (e) { $('saveStatus').textContent = '備份代碼格式不對，請確認是從這個工具匯出的。'; }

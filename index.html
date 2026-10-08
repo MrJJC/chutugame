@@ -80,6 +80,13 @@
       <input id="libSearch" type="search" placeholder="搜尋文字，例如人名或地點" aria-label="搜尋">
     </div>
     <div class="lib-count" id="libCount" role="status"></div>
+    <details class="lib-io">
+      <summary>匯出與匯入（校對文字用）</summary>
+      <p class="note">匯出上面篩選範圍的文字檔，用任何文字編輯器修改後再匯入。改過的段落之後就照你的版本顯示和朗讀，只存在這台裝置。</p>
+      <div class="settings-actions"><button class="small-btn" id="libExport">匯出文字檔</button><button class="small-btn" id="libImportBtn">匯入修改</button><button class="small-btn" id="libReset" hidden>還原全部</button></div>
+      <input type="file" id="libImport" accept=".txt,text/plain" hidden>
+      <div class="status" id="libIoStatus" role="status"></div>
+    </details>
     <div id="libBody"></div>
   </section>
 

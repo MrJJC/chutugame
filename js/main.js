@@ -23,6 +23,7 @@ const CACHE_VER = 1;
 const cacheSig = () => CACHE_VER + '|' + JSON.stringify(REAL);
 function enter() {
   $('loadMsg').hidden = true; $('loadBtns').hidden = true; $('skeleton').hidden = true;
+  applyOverrides();
   CUR = findSc(store.get('asr.last', '')) || allScenarios()[0]; homeCycle = CUR.cycle.id;
   toHome();
 }
