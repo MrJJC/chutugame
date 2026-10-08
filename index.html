@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>詭鎮劇本朗讀器 · 卡爾克薩之路</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%95%AF%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IM+Fell+English+SC&display=swap">
+<style>
+:root{
+  --ground:#120F0B; --ink:#EADBB6; --muted:#8F8370; --dim:#5E5546;
+  --brass:#B8955A; --brass-hi:#D4B47A; --blood:#8C3A2F; --blood-hi:#C9806F;
+  --verdigris:#6E9A88; --verdigris-hi:#8FB8A6; --line:#3A3226;
+  --serif:'Noto Sans TC','PingFang TC','Microsoft JhengHei','Heiti TC',sans-serif; --fell:'IM Fell English SC','Noto Sans TC',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--ground);color:var(--ink);font-family:var(--serif)}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ground:#120F0B;--ink:#EADBB6}}
+:root[data-theme="dark"]{--ground:#120F0B;--ink:#EADBB6}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brass-hi);outline-offset:3px}
+#app{position:relative;max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+/* film effects */
+.fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+.vignette{box-shadow:inset 0 0 160px 70px #050403}
+.candle{background:radial-gradient(ellipse 80% 38% at 50% 100%,rgba(190,140,70,.14),rgba(190,140,70,0) 70%)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+@keyframes rise{from{opacity:0;letter-spacing:.6em}to{opacity:1;letter-spacing:.35em}}
+@media (prefers-reduced-motion:reduce){.caret,.title-big{animation:none!important}}
+/* top bar */
+.bar{position:relative;z-index:60;display:flex;align-items:center;gap:6px;padding:12px 10px 4px}
+.bar .where{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.bar .where small{font-size:12px;color:var(--muted);letter-spacing:.15em}
+.bar .where strong{font-size:16px;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{width:44px;height:44px;display:grid;place-items:center;background:transparent;border:1px solid var(--line)}
+.icon-btn[aria-pressed="true"]{border-color:var(--brass)}
+.icon-btn svg{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn[aria-pressed="true"] svg{stroke:var(--brass-hi)}
+.pill{height:44px;padding:0 12px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;letter-spacing:.15em}
+.pill[aria-pressed="true"]{border-color:var(--brass);color:var(--brass-hi)}
+/* screens */
+.screen{flex:1;display:none;flex-direction:column;position:relative;z-index:10}
+.screen.on{display:flex}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 28px 40px;text-align:center}
+.btn{min-height:48px;padding:0 22px;background:transparent;border:1px solid var(--brass);color:var(--brass-hi);letter-spacing:.2em;font-size:15px}
+.btn.solid{background:var(--brass);color:var(--ground);font-weight:700}
+.btn.blood{border-color:var(--blood);color:var(--blood-hi)}
+.btn.blood.solid{background:var(--blood);color:#F2EAD6}
+.btn.verd{border-color:var(--verdigris);color:var(--verdigris-hi)}
+.btn.verd.solid{background:var(--verdigris);color:var(--ground)}
+.rule{display:flex;align-items:center;gap:12px;width:100%;max-width:26em;color:#7D6A4A;font-family:var(--fell);font-size:13px;letter-spacing:.25em}
+.rule::before,.rule::after{content:"";flex:1;border-top:1px solid #4A3C27}
+/* title */
+.title-small{font-family:var(--fell);color:var(--blood-hi);letter-spacing:.3em;font-size:15px;margin:0 0 14px}
+.title-big{font-size:clamp(32px,9vw,44px);font-weight:700;letter-spacing:.35em;margin:14px 0;animation:rise 2.4s ease-out both;padding-left:.35em}
+.hint{margin-top:48px;font-size:13px;letter-spacing:.3em;color:var(--muted)}
+.caret{animation:blink 1.1s ease-in-out infinite}
+/* story */
+#story .center{cursor:pointer;gap:22px}
+.story-label{font-size:13px;color:var(--muted);letter-spacing:.2em;min-height:1.4em}
+.passage{margin:0;max-width:24em;font-size:clamp(19px,5vw,24px);line-height:2.05;letter-spacing:.08em;text-shadow:0 0 18px rgba(0,0,0,.9)}
+.passage .rest{color:transparent}
+.under{height:24px;color:var(--brass);font-size:14px;letter-spacing:.2em}
+.after{display:none;flex-direction:column;align-items:center;gap:16px;padding:0 24px 32px}
+.after.on{display:flex}
+.effects{width:100%;max-width:26em;border:1px solid var(--line);padding:16px 18px;text-align:left;font-size:15px;line-height:1.8;color:#CFC3A3}
+.effects h3{margin:0 0 6px;font-size:13px;font-weight:400;color:var(--brass);letter-spacing:.2em}
+.effects p{margin:6px 0}
+/* game */
+#game{padding:8px 14px 24px;gap:14px}
+.deck{border:1px solid var(--line);background:rgba(18,15,11,.82);padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px}
+.deck.agenda{border-color:#3A2420}.deck.act{border-color:#23332D}
+.deck .head{display:flex;align-items:baseline;gap:12px}
+.deck .num{font-family:var(--fell);font-size:32px;line-height:1}
+.deck.agenda .num{color:var(--blood-hi)}.deck.act .num{color:var(--verdigris-hi)}
+.deck .meta{display:flex;flex-direction:column}
+.deck .meta small{font-size:12px;letter-spacing:.2em;color:var(--muted)}
+.deck .meta strong{font-size:20px;letter-spacing:.1em}
+.deck .need{margin-left:auto;font-size:13px;color:var(--muted);text-align:right}
+.deck .flavor{margin:0;font-size:15px;line-height:1.9;color:#BDB49C}
+.deck .row{display:grid;grid-template-columns:auto 1fr;gap:8px}
+.game-foot{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto}
+.game-foot .btn{min-height:52px;border-color:var(--line);color:var(--ink);letter-spacing:.1em;font-size:14px}
+/* settings */
+#settings{padding:8px 20px 32px;gap:18px}
+#settings h2{margin:8px 0 0;font-size:22px;letter-spacing:.2em}
+#settings p.note{margin:0;font-size:14px;line-height:1.8;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.field legend{font-size:14px;letter-spacing:.1em;color:var(--brass-hi)}
+.field input,.field select,.field textarea{background:#1A1610;border:1px solid var(--line);padding:10px 12px;min-height:44px;font-size:15px}
+.field textarea{min-height:84px;resize:vertical;line-height:1.7}
+fieldset.field{border:0;padding:0;margin:0}
+.radio{display:flex;align-items:center;gap:10px;min-height:40px;font-size:15px}
+.settings-actions{display:flex;gap:10px;flex-wrap:wrap}
+.status{font-size:14px;line-height:1.7;color:var(--muted);min-height:1.5em}
+.status.err{color:var(--blood-hi)}
+/* full text + glossary */
+.doc{padding:4px 20px 40px;gap:14px}
+.doc h2{margin:8px 0 0;font-size:22px;letter-spacing:.2em}
+.doc p.note{margin:0;font-size:14px;line-height:1.8;color:var(--muted)}
+.sec{border-top:1px solid var(--line);padding-top:10px}
+.sec>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:10px;font-size:17px;letter-spacing:.12em;list-style:none}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary::before{content:"▸";color:var(--brass);transition:transform .2s}
+.sec[open]>summary::before{transform:rotate(90deg)}
+.sec>summary small{color:var(--blood-hi);font-size:12px;letter-spacing:.1em}
+.sub{margin:14px 0 4px;font-size:13px;color:var(--brass);letter-spacing:.15em}
+.para{display:block;width:100%;text-align:left;background:transparent;border:0;border-left:2px solid transparent;padding:8px 10px;margin:0 -12px;font-size:17px;line-height:1.95;letter-spacing:.04em;color:var(--ink)}
+.para:hover{border-left-color:var(--brass);background:rgba(184,149,90,.06)}
+.fxline{margin:4px 0 4px;padding-left:10px;font-size:14px;line-height:1.8;color:var(--muted)}
+mark{background:transparent;color:inherit;border-bottom:1px dashed var(--brass-hi)}
+.rule-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0}
+.rule-row .r{font-size:16px;line-height:1.6}
+.rule-row .r small{display:block;font-size:12px;color:var(--muted)}
+.addrow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.addrow span{color:var(--brass)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:40px;padding:0 12px;background:transparent;border:1px solid var(--line);color:var(--ink);font-size:14px}
+.chip small{color:var(--muted);margin-left:6px}
+.check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px}
+.small-btn{min-height:40px;padding:0 14px;background:transparent;border:1px solid var(--line);color:var(--ink);font-size:14px}
+/* dialog + toast */
+dialog{background:#17130E;color:var(--ink);border:1px solid var(--brass);padding:22px;max-width:320px}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+dialog p{margin:0 0 18px;line-height:1.8}
+dialog .acts{display:flex;gap:10px;justify-content:flex-end}
+#toast{position:fixed;left:50%;bottom:0;margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:70;background:#1F1A12;border:1px solid var(--blood);color:var(--blood-hi);padding:10px 14px;font-size:14px;max-width:90vw;display:none}
+#toast.on{display:block}
+
+html,body{height:100%}
+.badge{display:inline-block;margin-top:18px;padding:4px 10px;border:1px solid var(--line);font-size:12px;color:var(--muted);letter-spacing:.15em}
+.range{display:grid;grid-template-columns:4em 1fr 3em;gap:10px;align-items:center;font-size:14px}
+
+/* home + library */
+.home{padding:8px 18px 32px;gap:16px}
+.home h2,.lib h2{margin:8px 0 0;font-size:22px;letter-spacing:.15em;font-weight:700}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{min-height:44px;padding:0 14px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:14px;letter-spacing:.08em}
+.tab[aria-pressed="true"]{border-color:var(--brass);color:var(--brass-hi)}
+.sc-row{display:grid;grid-template-columns:3.2em 1fr auto;gap:12px;align-items:center;width:100%;min-height:60px;padding:8px 4px;background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left;color:var(--ink)}
+.sc-row .code{font-family:var(--fell);font-size:20px;color:var(--brass)}
+.sc-row strong{font-size:17px;font-weight:500;letter-spacing:.06em}
+.sc-row small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.sc-row .go{color:var(--muted);font-size:13px}
+.lib{padding:4px 18px 40px;gap:12px}
+.lib-ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lib-ctl select,.lib-ctl input{background:#1A1610;border:1px solid var(--line);min-height:44px;padding:0 10px;font-size:15px;width:100%}
+.lib-ctl input{grid-column:1/-1}
+.lib-count{font-size:13px;color:var(--muted)}
+.lib-sc{margin-top:18px;padding-top:12px;border-top:1px solid var(--brass)}
+.lib-sc h3{margin:0;font-size:19px;letter-spacing:.08em}
+.lib-sc h3 small{display:block;font-size:12px;color:var(--muted);font-weight:400;letter-spacing:.12em;margin-bottom:2px}
+.lib-sec{margin:14px 0 2px;font-size:14px;color:var(--blood-hi);letter-spacing:.15em}
+mark.hit{background:rgba(184,149,90,.35);border-bottom:0;color:#fff}
+
+.savebar{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:10px 12px}
+.savebar div{display:flex;flex-direction:column;margin-right:auto}
+.savebar small{font-size:12px;color:var(--muted);letter-spacing:.1em}
+.savebar strong{font-size:16px;font-weight:500}
+#continueBtn{width:100%}
+.save-item{display:flex;align-items:center;gap:10px;min-height:48px;border-bottom:1px solid var(--line);font-size:15px}
+.save-item small{color:var(--muted);font-size:12px;margin-left:auto}
+.sc-row .go.done{color:var(--verdigris-hi)}
+.sc-row .go.doing{color:var(--brass-hi)}
+#logBody p{margin:4px 0}
+#logBody h3{margin:12px 0 4px}
+#logBody h3:first-child{margin-top:0}
+
+.sent{transition:opacity .6s ease,color .6s ease}
+.sent.todo{opacity:.28}
+.sent.done{opacity:.62}
+.sent.now{opacity:1;color:#F6EBCF}
+@media (prefers-reduced-motion:reduce){.sent{transition:none}}
+
+</style>
+</head>
+<body>
+<div class="fx candle"></div>
+<div class="fx vignette"></div>
+
+<div id="app">
+  <header class="bar">
+    <button class="icon-btn" id="homeBtn" aria-label="選擇關卡"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="where"><small id="whereSmall"></small><strong id="whereBig"></strong></div>
+    <button class="pill" id="autoBtn" aria-pressed="true">自動</button>
+    <button class="icon-btn" id="soundBtn" aria-pressed="false" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+    <button class="icon-btn" id="textBtn" aria-label="文本庫"><svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg></button>
+    <button class="icon-btn" id="glossBtn" aria-label="名詞替換"><svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h7M4 17h5"/><path d="M15 15l3-8 3 8M16 13h4"/></svg></button>
+    <button class="icon-btn" id="gearBtn" aria-label="朗讀設定"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+  </header>
+
+  <section class="screen home" id="home">
+    <div class="savebar">
+      <div><small>目前存檔</small><strong id="saveName"></strong></div>
+      <button class="small-btn" id="savesBtn">存檔與日誌</button>
+    </div>
+    <button class="btn solid" id="continueBtn" hidden></button>
+    <h2>選擇關卡</h2>
+    <div class="tabs" id="cycleTabs" role="group" aria-label="循環"></div>
+    <div id="scList"></div>
+    <p class="status" id="loadMsg" role="status" hidden></p>
+    <div class="settings-actions" id="loadBtns" hidden><button class="btn" id="retryLoad">重新讀取</button><button class="small-btn" id="useSample">先用示意劇本試介面</button></div>
+  </section>
+
+  <section class="screen" id="title">
+    <div class="center" id="titleTap" role="button" tabindex="0" aria-label="開始">
+      <p class="title-small" id="titleSmall"></p>
+      <div class="rule"></div>
+      <h1 class="title-big" id="titleBig"></h1>
+      <div class="rule"></div>
+      <p class="hint caret">輕觸畫面，開始</p>
+    </div>
+  </section>
+
+  <section class="screen" id="story">
+    <div class="center" id="storyTap" role="button" tabindex="0" aria-label="繼續">
+      <div class="story-label" id="storyLabel"></div>
+      <div class="rule"><span id="storyCount"></span></div>
+      <p class="passage" aria-live="polite"><span id="shown"></span><span class="rest" id="rest"></span></p>
+      <div class="under" id="under"></div>
+    </div>
+    <div class="after" id="after">
+      <div class="effects" id="effects" hidden></div>
+      <button class="btn solid" id="afterBtn">繼續</button>
+    </div>
+  </section>
+
+  <section class="screen" id="game">
+    <div class="deck agenda">
+      <div class="head"><span class="num" id="agNum">I</span>
+        <div class="meta"><small id="agSmall">密謀</small><strong id="agName"></strong></div>
+        <span class="need" id="agNeed"></span></div>
+      <p class="flavor" id="agFlavor"></p>
+      <div class="row"><button class="btn blood" id="agRead">重念</button><button class="btn blood solid" id="agAdv">密謀推進</button></div>
+    </div>
+    <div class="deck act">
+      <div class="head"><span class="num" id="acNum">I</span>
+        <div class="meta"><small id="acSmall">場景</small><strong id="acName"></strong></div>
+        <span class="need" id="acNeed"></span></div>
+      <p class="flavor" id="acFlavor"></p>
+      <div class="row"><button class="btn verd" id="acRead">重念</button><button class="btn verd solid" id="acAdv">場景推進</button></div>
+    </div>
+    <div class="game-foot">
+      <button class="btn" id="undoBtn">回上一張</button>
+      <button class="btn" id="resBtn">卡牌指示進入結局</button>
+    </div>
+  </section>
+
+  <section class="screen lib" id="library">
+    <h2>文本庫</h2>
+    <p class="note" style="margin:0;font-size:14px;color:var(--muted);line-height:1.8">所有循環、所有關卡的文字都在這裡，包含結局。點任何一段就從那裡開始念；虛線底線是套用過名詞替換的字。</p>
+    <div class="lib-ctl">
+      <select id="libCycle" aria-label="循環"></select>
+      <select id="libScenario" aria-label="關卡"></select>
+      <input id="libSearch" type="search" placeholder="搜尋文字，例如人名或地點" aria-label="搜尋">
+    </div>
+    <div class="lib-count" id="libCount" role="status"></div>
+    <div id="libBody"></div>
+  </section>
+
+  <section class="screen doc" id="saves">
+    <h2>存檔與戰役日誌</h2>
+    <p class="note">進度會自動儲存在這台裝置的瀏覽器裡：玩到哪一張卡、每一關打出哪個結局、戰役日誌都會記下來。換裝置或清除瀏覽器資料前，記得先「匯出備份」。</p>
+    <div class="field"><label>存檔（同一個循環可以有不同組人各自的進度）</label><div id="saveList"></div></div>
+    <div class="addrow" style="grid-template-columns:1fr auto"><input id="saveNameIn" placeholder="存檔名稱，例如：家庭場" aria-label="存檔名稱"><button class="small-btn" id="saveNew">新增存檔</button></div>
+    <div class="settings-actions"><button class="small-btn" id="saveRename">把目前存檔改成這個名字</button><button class="small-btn" id="saveDel">刪除目前存檔</button></div>
+    <div class="status" id="saveStatus" role="status"></div>
+    <div class="field"><label>戰役日誌</label><div id="logBody" class="effects"></div></div>
+    <div class="field"><label for="backupBox">備份（包含所有存檔、名詞替換表、朗讀設定）</label>
+      <textarea id="backupBox" placeholder="按「匯出備份」產生代碼；換裝置時把代碼貼在這裡再按「匯入備份」"></textarea></div>
+    <div class="settings-actions"><button class="small-btn" id="backupOut">匯出備份</button><button class="small-btn" id="backupIn">匯入備份</button><button class="btn solid" id="savesDone">完成</button></div>
+  </section>
+
+  <section class="screen doc" id="glossary">
+    <h2>名詞替換</h2>
+    <p class="note">把翻譯用字換成你們卡面上的用字。「只改讀音」用在字不用改、但語音念錯的時候。</p>
+    <div class="field"><label for="gFrom">新增一條</label>
+      <div class="addrow"><input id="gFrom" placeholder="原本的字"><span>→</span><input id="gTo" placeholder="改成"></div></div>
+    <div class="settings-actions">
+      <select id="gScope" class="small-btn" aria-label="套用範圍"><option value="all">文字和朗讀都改</option><option value="speech">只改讀音</option></select>
+      <button class="btn solid" id="gAdd">加入</button>
+    </div>
+    <div class="status" id="gStatus" role="status"></div>
+    <div id="gRules"></div>
+    <label class="check"><input type="checkbox" id="gQuotes"> 把 “ ” 換成「 」</label>
+    <div class="field"><label>常出現的名字（點一下帶入上面）</label><div class="chips" id="gChips"></div></div>
+    <div class="field"><label for="gShare">和同好分享替換表</label>
+      <textarea id="gShare" placeholder="按「匯出」產生代碼；或把別人給你的代碼貼在這裡再按「匯入」"></textarea></div>
+    <div class="settings-actions"><button class="small-btn" id="gExport">匯出</button><button class="small-btn" id="gImport">匯入</button><button class="btn solid" id="gDone">完成</button></div>
+  </section>
+
+  <section class="screen doc" id="settings">
+    <h2>朗讀設定</h2>
+    <p class="note">選 Gemini 但沒填金鑰、或連線失敗時，會自動改用裝置語音。</p>
+    <fieldset class="field">
+      <legend>聲音</legend>
+      <label class="radio"><input type="radio" name="engine" value="openrouter"> Gemini 語音（OpenRouter，需要金鑰）</label>
+      <label class="radio"><input type="radio" name="engine" value="browser"> 裝置內建語音（Apple 美佳等）</label>
+      <label class="radio"><input type="radio" name="engine" value="silent"> 不出聲，只顯示文字</label>
+    </fieldset>
+    <fieldset class="field">
+      <legend>文字呈現</legend>
+      <label class="radio"><input type="radio" name="reveal" value="sentence"> 整段顯示，念到哪一句就亮哪一句（建議）</label>
+      <label class="radio"><input type="radio" name="reveal" value="full"> 整段直接顯示，不做任何效果</label>
+      <label class="radio"><input type="radio" name="reveal" value="type"> 逐字打字（和語音只能大約對上）</label>
+    </fieldset>
+    <div class="field"><label for="keyIn">OpenRouter 金鑰（只存在這台裝置）</label><input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…"></div>
+    <div class="addrow" style="grid-template-columns:1fr 1fr"><input id="modelIn" aria-label="Gemini 模型" spellcheck="false"><select id="gvoiceIn" class="small-btn" aria-label="Gemini 聲音">
+      <option>Charon</option><option>Algenib</option><option>Enceladus</option><option>Fenrir</option><option>Iapetus</option><option>Orus</option><option>Umbriel</option><option>Kore</option><option>Aoede</option></select></div>
+    <div class="field"><label for="styleIn">Gemini 語氣指示（聽到被念出來就清空）</label><textarea id="styleIn"></textarea></div>
+    <div class="field"><label for="voiceSel">裝置語音（沒填金鑰或 Gemini 失敗時使用）</label><select id="voiceSel"></select>
+      <p class="note">預設使用 Apple 的台灣中文語音「美佳」。iPhone／iPad 可到「設定 → 輔助使用 → 朗讀內容 → 聲音 → 中文（台灣）」下載「美佳（增強版）」，聲音會自然很多，下載後回來在這裡選它。</p></div>
+    <div class="range"><label for="rateIn">語速</label><input type="range" id="rateIn" min="0.6" max="1.2" step="0.05"><span id="rateOut"></span></div>
+    <div class="range"><label for="pitchIn">音調</label><input type="range" id="pitchIn" min="0.5" max="1.2" step="0.05"><span id="pitchOut"></span></div>
+    <div class="settings-actions"><button class="btn" id="testBtn">試聽</button><button class="btn solid" id="saveBtn">完成</button></div>
+    <div class="status" id="setStatus" role="status"></div>
+  </section>
+</div>
+
+<dialog id="confirm"><p id="confirmText"></p>
+  <div class="acts"><button class="btn" id="cNo">取消</button><button class="btn solid" id="cYes">推進</button></div></dialog>
+<dialog id="resPick"><p>卡面寫著「進入（→結局 N）」，或所有調查員都已撤退／被擊敗時，選擇對應的結局：</p>
+  <div id="resList" style="display:grid;gap:8px;margin-bottom:14px"></div>
+  <div class="acts"><button class="btn" id="resCancel">取消</button></div></dialog>
+<dialog id="branchPick"><p id="branchText"></p>
+  <div id="branchList" style="display:grid;gap:8px"></div></dialog>
+<div id="toast" role="alert"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* =========================================================
+   劇本資料：要新增循環，只要在 CYCLES 裡多加一個物件。
+   每個關卡的格式都一樣：
+   { id, code, title, intro, agenda:[卡], act:[卡], resolutions:{R1:{text,log}, ..., no_resolution:{...}}, names:[] }
+   卡：{ name, need, flavor, backName, backFlavor, backText, res? }（res 寫 'R1' 代表卡背會進入結局 1）
+   正式版會由讀取程式從 arkham-cards-data 自動組出同樣的格式。
+   以下全部是原創示意文字，不是遊戲原文。
+   ========================================================= */
+const SAMPLE_CYCLES = [
+  { id: 'demo1', name: '示意循環一：霧鎮檔案', scenarios: [
+    { id: 'library', code: 'I', title: '午夜的圖書館',
+      intro: '夜已經深了。米斯卡塔尼克大學的鐘樓敲過十一下，整座校園只剩圖書館那盞燈還亮著。\n艾德溫·霍爾教授傍晚託人帶來一張紙條，上面只有一行潦草的字：「如果我天亮前沒有回來，就到圖書館地下室找我。」\n你推開沉重的木門。走廊盡頭傳來紙張翻動的聲音——可是那裡，應該空無一人。',
+      names: ['艾德溫·霍爾', '米斯卡塔尼克大學', '無形之影', '地下室入口', '閱覽室'],
+      agenda: [
+        { name: '寂靜的書庫', need: '毀滅 5', flavor: '書架之間的燈一盞一盞暗了下去，彷彿有什麼東西正在吞掉光。', backName: '低語', backFlavor: '你聽見有人在你耳邊說話，可是回頭時，那裡只有一排排沉默的書脊。', backText: '每位調查員受到 1 點恐懼。\n在「地下室入口」放置 1 個毀滅標記。' },
+        { name: '低語漸強', need: '毀滅 4', flavor: '低語聲不再壓抑，它們在念一個你不認得的名字，一遍又一遍。', backName: '牆後的東西', backFlavor: '牆面開始滲出冰冷的水氣，某種巨大的東西正在另一邊緩慢移動。', backText: '將「無形之影」生成在「閱覽室」。' },
+        { name: '它醒了', need: '毀滅 3', flavor: '地板傳來一陣震動，整座圖書館像是深深吸了一口氣。', backName: '吞沒', backFlavor: '黑暗從地下室湧上來，你最後看見的，是自己的燈籠在空中熄滅。', backText: '每位調查員受到 2 點恐懼。然後，進入（→結局 2）。', res: 'R2' }
+      ],
+      act: [
+        { stage: 1, name: '尋找教授', need: '每位調查員 2 線索', flavor: '你必須在天亮之前找到霍爾教授。他留下的筆記散落在圖書館各處。', backName: '兩條路', backFlavor: '霍爾教授的筆記停在兩個地方：一頁寫著地下室，另一頁寫著閱覽室。你們必須做出選擇。', backText: '如果調查員選擇前往地下室，翻到場景 2「封存的檔案」。\n否則，翻到場景 2「燃燒的閱覽室」。' },
+        { stage: 2, name: '燃燒的閱覽室', need: '每位調查員 3 線索', flavor: '閱覽室的壁爐不知何時燃起了火，火光裡的書頁一張張捲曲、發黑，卻沒有任何煙。', backName: '灰燼中的名字', backFlavor: '在燒焦的書桌下，你找到霍爾教授。他喃喃念著一個名字，聲音沙啞得不像他自己。', backText: '將「霍爾教授」放置在你的區域。每位調查員受到 1 點恐懼。' },
+        { stage: 2, name: '封存的檔案', need: '每位調查員 3 線索', flavor: '地下室的空氣潮濕又沉重，成排的鐵櫃上貼著早已褪色的標籤。', backName: '教授的下落', backFlavor: '你在最深處的檔案櫃後面，找到昏迷不醒的霍爾教授。他的手裡緊緊握著一頁撕下的紙。', backText: '將「霍爾教授」放置在你的區域。' },
+        { stage: 3, name: '逃出圖書館', need: '目標：帶著教授離開', flavor: '身後傳來書架倒塌的巨響。你們必須立刻離開這裡。', backName: '黎明', backFlavor: '你們跌跌撞撞地衝出大門，第一道晨光正好照在台階上。', backText: '進入（→結局 1）。', res: 'R1' }
+      ],
+      resolutions: {
+        R1: { text: '晨光照進窗戶，所有聲音都消失了，彷彿什麼事都沒有發生過。\n霍爾教授醒來後，什麼也不肯說，只是把那頁紙小心地收進外套內袋。', log: ['戰役日誌記錄：你們救出了霍爾教授。', '每位調查員獲得 2 點經驗值。'] },
+        R2: { text: '你在一片冰冷中醒來，天已經亮了。圖書館的大門緊閉，門把上結了一層薄霜。\n沒有人知道霍爾教授去了哪裡。', log: ['戰役日誌記錄：霍爾教授失蹤了。', '每位調查員受到 1 點精神創傷。'] },
+        no_resolution: { text: '你逃出校園，身後的尖叫聲久久沒有停止。\n回頭望去，圖書館那盞燈，依然亮著。', log: ['戰役日誌記錄：霍爾教授失蹤了。'] }
+      } },
+    { id: 'harbor', code: 'II', title: '霧中的碼頭',
+      intro: '霍爾教授留下的那頁紙上，畫著一座碼頭和一艘沒有名字的船。\n你們趕到印斯茅斯港口時，濃霧已經吞沒了整條海岸線，只聽得見浪打在木樁上的聲音。',
+      names: ['印斯茅斯', '無名之船', '燈塔看守人'],
+      agenda: [
+        { name: '漲潮', need: '毀滅 6', flavor: '海水一寸一寸爬上碼頭，霧裡傳來像是歌聲的東西。', backName: '歌聲', backFlavor: '歌聲越來越近，你發現自己正不由自主地朝水邊走去。', backText: '每位調查員進行一次意志檢定（3）。失敗的調查員受到 1 點恐懼。' },
+        { name: '霧中之物', need: '毀滅 5', flavor: '霧裡有個巨大的影子，在海面上緩緩起伏。', backName: '浮出水面', backFlavor: '那艘無名之船終於靠岸，甲板上站滿了沉默的人影。', backText: '進入（→結局 2）。', res: 'R2' }
+      ],
+      act: [
+        { name: '燈塔的光', need: '每位調查員 2 線索', flavor: '遠處的燈塔忽明忽暗，像是有人在打信號。', backName: '燈塔看守人', backFlavor: '燈塔看守人顫抖著告訴你，那艘船每七年才會出現一次。', backText: '將「燈塔看守人」放置在「燈塔」。' },
+        { name: '登船', need: '目標：抵達無名之船', flavor: '你們必須在船離開之前登上甲板。', backName: '船艙深處', backFlavor: '在船艙最深處，你找到一本用你看不懂的文字寫成的航海日誌。', backText: '進入（→結局 1）。', res: 'R1' }
+      ],
+      resolutions: {
+        R1: { text: '你們帶著航海日誌跳回碼頭。身後的船無聲地沉入霧中，彷彿從未存在過。', log: ['戰役日誌記錄：你們取得了航海日誌。', '每位調查員獲得 2 點經驗值。'] },
+        R2: { text: '霧散去時，港口空蕩蕩的，只剩下一串濕漉漉的腳印，從海裡一路延伸到鎮上。', log: ['戰役日誌記錄：無名之船靠岸了。'] },
+        no_resolution: { text: '你們拚命逃離碼頭，歌聲在腦海裡迴盪了一整夜。', log: ['戰役日誌記錄：無名之船靠岸了。'] }
+      } }
+  ] },
+  { id: 'demo2', name: '示意循環二：沙漠信號', scenarios: [
+    { id: 'radio', code: 'I', title: '沉默的電台',
+      intro: '一九二七年的秋天，沙漠邊緣的氣象站突然收到一段來源不明的無線電訊號。\n訊號只重複一句話，用的是一種沒有人聽過的語言。站長在發出求援電報後，就再也沒有回應。',
+      names: ['氣象站', '站長'],
+      agenda: [
+        { name: '雜訊', need: '毀滅 5', flavor: '收音機裡的雜訊裡，似乎藏著某種規律。', backName: '頻率', backFlavor: '你調到那個頻率時，整座氣象站的燈同時閃了一下。', backText: '每位調查員受到 1 點恐懼。' },
+        { name: '回應', need: '毀滅 4', flavor: '這一次，訊號回應了你的聲音。', backName: '它聽見了', backFlavor: '沙丘的另一邊，有什麼東西開始朝這裡移動。', backText: '進入（→結局 2）。', res: 'R2' }
+      ],
+      act: [
+        { name: '搜索氣象站', need: '每位調查員 2 線索', flavor: '站長的辦公桌上，散落著寫滿數字的紙張。', backName: '站長的筆記', backFlavor: '最後一頁只寫著：「不要回答它。」', backText: '將「無線電室」放置入場。' },
+        { name: '切斷訊號', need: '目標：破壞發報機', flavor: '你們必須在訊號完成之前，讓它永遠沉默。', backName: '寂靜', backFlavor: '發報機冒出一陣火花，沙漠重新歸於寂靜。', backText: '進入（→結局 1）。', res: 'R1' }
+      ],
+      resolutions: {
+        R1: { text: '你們在日出前離開了氣象站。沒有人再提起那段訊號，但每個人都記得那句話的發音。', log: ['戰役日誌記錄：訊號被切斷了。'] },
+        R2: { text: '當救援隊抵達時，氣象站空無一人，只有收音機還在低聲重複那句話。', log: ['戰役日誌記錄：它聽見了。'] },
+        no_resolution: { text: '你們棄站而逃。身後的天線，在月光下輕輕顫動。', log: ['戰役日誌記錄：它聽見了。'] }
+      } }
+  ] }
+];
+let CYCLES = [];
+function normalize(cycles) {
+  cycles.forEach(cy => cy.scenarios.forEach(sc => {
+    sc.cycle = cy; sc.kind = sc.kind || 'play'; sc.agenda = sc.agenda || []; sc.act = sc.act || []; sc.resolutions = sc.resolutions || {};
+    [sc.agenda, sc.act].forEach(list => list.forEach((c, i) => {
+      if (!c.stage) c.stage = i + 1;
+      c.res = !c.res ? [] : Array.isArray(c.res) ? c.res : [c.res];
+    }));
+  }));
+  return cycles;
+}
+
+/* =========================================================
+   真實資料設定：要加冒險或循環，只要在這裡多寫一行。
+   encounter = ArkhamDB 的遭遇組代碼；pack = 卡牌所在的資料包。
+   ========================================================= */
+const REAL = [
+  { id: 'ptc', name: '卡爾克薩之路', folder: 'ptc', extraPo: ['campaign', 'core'], scenarios: [
+    { id: 'prologue', code: '序', title: '序章', kind: 'story',
+      optional: [{ ask: '這次戰役，有人選擇「蘿拉·海耶斯」當調查員嗎？', step: 'lola_prologue', label: '蘿拉·海耶斯的玩家朗讀' }] },
+    { id: 'curtain_call', code: 'I', pack: 'ptc' }
+    // 之後加：{ id: 'the_last_king', code: 'II', pack: 'eotp' }, ...
+  ] }
+];
+const RAW_CARDS = 'https://raw.githubusercontent.com/zzorba/arkham-cards-data/master/';
+const RAW_ADB = 'https://raw.githubusercontent.com/Kamalisk/arkhamdb-json-data/master/';
+const mirror = u => u.replace('https://raw.githubusercontent.com/zzorba/arkham-cards-data/master/', 'https://cdn.jsdelivr.net/gh/zzorba/arkham-cards-data@master/')
+  .replace('https://raw.githubusercontent.com/Kamalisk/arkhamdb-json-data/master/', 'https://cdn.jsdelivr.net/gh/Kamalisk/arkhamdb-json-data@master/');
+async function fetchOne(u, kind) {
+  let last;
+  for (const url of [u, mirror(u)]) {
+    try {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 15000);
+      const r = await fetch(url, { signal: ctl.signal }); clearTimeout(t);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return kind === 'json' ? await r.json() : await r.text();
+    } catch (e) { last = e; }
+  }
+  throw new Error(`${u.split('/').slice(-2).join('/')}（${last && last.name === 'AbortError' ? '逾時' : (last && last.message) || '連不上'}）`);
+}
+function parsePo(text) {
+  const map = Object.create(null); let cur = null, field = null;
+  const unq = s => { s = s.trim(); try { return JSON.parse(s); } catch (e) { return s.slice(1, -1); } };
+  const push = () => { if (cur && cur.id && cur.str) map[cur.id] = cur.str; };
+  for (const line of text.split(/\r?\n/)) {
+    if (line.startsWith('msgid ')) { push(); cur = { id: unq(line.slice(6)), str: '' }; field = 'id'; }
+    else if (line.startsWith('msgstr ')) { if (cur) { cur.str = unq(line.slice(7)); field = 'str'; } }
+    else if (line.startsWith('"') && cur && field) cur[field] += unq(line);
+    else if (line.startsWith('msgctxt')) field = null;
+  }
+  push(); return map;
+}
+const ICON = { action: '［行動］', reaction: '［反應］', free: '［免費］', fast: '［免費］', skull: '［骷髏］', cultist: '［異教徒］', tablet: '［石板］', elder_thing: '［古神］', auto_fail: '［觸手］', elder_sign: '［舊印］', willpower: '［意志］', intellect: '［智力］', combat: '［戰力］', agility: '［敏捷］', per_investigator: '［每位調查員］', bless: '［祝福］', curse: '［詛咒］' };
+function clean(s) {
+  return (s || '').replace(/<br\s*\/?>/gi, '\n').replace(/\\n/g, '\n').replace(/<[^>]+>/g, '')
+    .replace(/\[\[([^\]]+)\]\]/g, '$1').replace(/\[([a-z_]+)\]/g, (m, k) => ICON[k] || '').replace(/[ \t]+\n/g, '\n').trim();
+}
+async function loadReal() {
+  const cycles = [];
+  for (const cy of REAL) {
+    const packs = [...new Set(cy.scenarios.filter(s => s.pack).map(s => s.pack))];
+    const poNames = [...new Set([...cy.scenarios.map(s => s.id), ...(cy.extraPo || [])])];
+    const [guides, pos, enPacks, zhPacks] = await Promise.all([
+      Promise.all(cy.scenarios.map(s => fetchOne(`${RAW_CARDS}campaigns/${cy.folder}/${s.id}.json`, 'json'))),
+      Promise.all(poNames.map(n => fetchOne(`${RAW_CARDS}i18n/zh/campaigns/${cy.folder}/${n}.po`, 'text').catch(() => ''))),
+      Promise.all(packs.map(p => fetchOne(`${RAW_ADB}pack/${p}/${p}_encounter.json`, 'json'))),
+      Promise.all(packs.map(p => fetchOne(`${RAW_ADB}translations/zh/pack/${p}/${p}_encounter.json`, 'json')))
+    ]);
+    const T = Object.assign(Object.create(null), ...pos.slice().reverse().map(parsePo));
+    const tr = s => (s && T[s]) ? T[s] : (s || '');
+    const en = enPacks.flat(), zhBy = Object.fromEntries(zhPacks.flat().map(c => [c.code, c]));
+    const names = new Set();
+    zhPacks.flat().forEach(c => { [c.name, c.back_name].forEach(n => n && n.length >= 2 && names.add(n)); });
+    const scenarios = cy.scenarios.map((cfg, k) => {
+      const g = guides[k], steps = Object.fromEntries(g.steps.map(s => [s.id, s]));
+      const full = tr(g.full_name);
+      const title = cfg.title || (full.includes('：') ? full.split('：').slice(1).join('：') : full).trim();
+      const intro = clean(tr((steps.intro || g.steps.find(s => s.type === 'story') || {}).text));
+      const stepText = s => s && s.text && !s.id.startsWith('$') ? clean(tr(s.text)) : '';
+      const setup = (g.setup || []).map(id => steps[id]).filter(s => s && s.type !== 'story' && s.type !== 'location_setup' && s.type !== 'encounter_sets').map(stepText).filter(Boolean);
+      const deck = type => en.filter(c => c.encounter_code === cfg.id && c.type_code === type).sort((a, b) => (+a.stage) - (+b.stage) || a.code.localeCompare(b.code)).map(c => {
+        const z = zhBy[c.code] || {};
+        return {
+          code: c.code, stage: +c.stage, name: clean(z.name || c.name), backName: clean(z.back_name || c.back_name || ''),
+          flavor: clean(z.flavor || c.flavor), backFlavor: clean(z.back_flavor || c.back_flavor), backText: clean(z.back_text || c.back_text),
+          res: [...new Set(((c.back_text || '').match(/→R\d+/g) || []).map(x => x.slice(1)))],
+          need: type === 'agenda' ? (c.doom ? `毀滅 ${c.doom}` : '') : (c.clues ? (c.clues_fixed ? `${c.clues} 線索` : `每位調查員 ${c.clues} 線索`) : '目標見卡面')
+        };
+      });
+      const resolutions = {};
+      (g.resolutions || []).forEach(r => {
+        const log = [];
+        (r.steps || []).forEach(id => {
+          const s = steps[id]; if (!s || id.startsWith('$')) return;
+          const t = stepText(s); if (t) log.push(t);
+          if (s.input && s.input.type === 'choose_one' && s.input.choices) s.input.choices.forEach(ch => ch.text && log.push('・' + clean(tr(ch.text))));
+        });
+        resolutions[r.id] = { text: clean(tr(r.text)), log };
+      });
+      const extra = (cfg.optional || []).map(o => ({ ...o, text: clean(tr((steps[o.step] || {}).text)) })).filter(o => o.text);
+      return { id: `${cy.id}.${cfg.id}`, code: cfg.code, title, kind: cfg.kind || 'play', intro, setup, extra,
+        agenda: cfg.kind === 'story' ? [] : deck('agenda'), act: cfg.kind === 'story' ? [] : deck('act'), resolutions, names: [] };
+    });
+    scenarios.forEach(sc => { sc.names = [...names].filter(n => [sc.intro, ...sc.agenda.concat(sc.act).flatMap(c => [c.flavor, c.backFlavor, c.backText]), ...Object.values(sc.resolutions).map(r => r.text)].join('\n').includes(n)); });
+    cycles.push({ id: cy.id, name: cy.name, scenarios });
+  }
+  return cycles;
+}
+const allScenarios = () => CYCLES.flatMap(cy => cy.scenarios);
+normalize(SAMPLE_CYCLES);
+const allNames = () => [...new Set(allScenarios().flatMap(sc => sc.names || []))];
+const findSc = id => allScenarios().find(s => s.id === id);
+
+function chunks(s, max = 90) {
+  const out = [];
+  for (const para of (s || '').split(/\n+/).map(x => x.trim()).filter(Boolean)) {
+    const sents = para.match(/[^。！？]+[。！？]*[」』”）]*/g) || [para];
+    let acc = '';
+    for (const se of sents) { if (acc && (acc + se).length > max) { out.push(acc); acc = se; } else acc += se; }
+    if (acc) out.push(acc);
+  }
+  return out;
+}
+const RES_NAMES = { no_resolution: '無結局', no_resolution_resigned: '無結局（全員撤退）', no_resolution_defeated: '無結局（全員被擊敗）', investigator_defeat: '調查員被擊敗', done: '已讀完' };
+const resLabel = id => RES_NAMES[id] || (/^R\d+$/.test(id) ? `結局 ${id.slice(1)}` : id);
+const resIds = sc => Object.keys(sc.resolutions).sort((x, y) => (x === 'no_resolution') - (y === 'no_resolution') || x.localeCompare(y));
+const cardItems = (c, word, back) => chunks(back ? c.backFlavor : c.flavor).map(t => ({ text: t, label: back ? `${word} ${ROMAN[c.stage]} 背面 · ${c.backName}` : `${word} ${ROMAN[c.stage]} · ${c.name}` }));
+function sections(sc) {
+  if (sc.kind === 'story') return [{ title: sc.title, groups: [
+    { sub: '開場', items: chunks(sc.intro).map(t => ({ text: t, label: sc.title })) },
+    ...(sc.extra || []).map(o => ({ sub: o.label, items: chunks(o.text).map(t => ({ text: t, label: o.label })) }))] }];
+  const card = (c, w, i) => [
+    ...(i === 0 ? [] : [{ sub: `${w} ${ROMAN[c.stage]} 正面 · ${c.name}`, items: cardItems(c, w) }]),
+    { sub: `${w} ${ROMAN[c.stage]} 背面 · ${c.backName}`, items: cardItems(c, w, true), fx: c.backText }
+  ];
+  return [
+    { title: '開場與開局', groups: [
+      { sub: '開場', items: chunks(sc.intro).map(t => ({ text: t, label: '開場' })) },
+      { sub: `密謀 I 正面 · ${sc.agenda[0].name}`, items: cardItems(sc.agenda[0], '密謀') },
+      { sub: `場景 I 正面 · ${sc.act[0].name}`, items: cardItems(sc.act[0], '場景') }] },
+    { title: '密謀卡', groups: sc.agenda.flatMap((c, i) => card(c, '密謀', i)) },
+    { title: '場景卡', groups: sc.act.flatMap((c, i) => card(c, '場景', i)) },
+    { title: '結局', groups: resIds(sc).map(id => ({ sub: resLabel(id), items: chunks(sc.resolutions[id].text).map(t => ({ text: t, label: resLabel(id) })), fx: (sc.resolutions[id].log || []).join('\n') })) }
+  ];
+}
+
+/* ---------- settings ---------- */
+const S = Object.assign({ engine: 'browser', voiceURI: '', rate: 0.85, pitch: 0.8, reveal: 'sentence', key: '', model: 'google/gemini-3.8-flash-tts', gvoice: 'Charon', style: '請用台灣口音的國語，以低沉、緩慢、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣，朗讀以下文字：' }, store.get('asr.settings', {}));
+let auto = true;
+
+/* ---------- saves（存檔） ---------- */
+const SV = store.get('asr.saves', null) || (() => {
+  const id = 's' + Date.now();
+  return { active: id, list: { [id]: { id, name: '我的戰役', created: Date.now(), updated: Date.now(), progress: null, results: {}, log: [] } } };
+})();
+const persist = () => { const s = SV.list[SV.active]; if (s) s.updated = Date.now(); store.set('asr.saves', SV); };
+const save = () => SV.list[SV.active] || Object.values(SV.list)[0];
+function saveProgress(phase) {
+  save().progress = { scenarioId: CUR.id, phase, ag: G.ag, ac: G.ac, history: G.history.slice() };
+  persist();
+}
+function saveResult(sc, resId) {
+  const s = save();
+  s.results[sc.id] = { res: resId, at: Date.now() };
+  s.log = s.log.filter(e => e.sc !== sc.id);
+  ((sc.resolutions[resId] || {}).log || []).forEach(text => s.log.push({ sc: sc.id, text }));
+  if (s.progress && s.progress.scenarioId === sc.id) s.progress = null;
+  persist();
+}
+const fmtTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+
+/* ---------- glossary ---------- */
+const GL = Object.assign({ rules: [], quotes: true }, store.get('asr.glossary', {}));
+const saveGL = () => store.set('asr.glossary', GL);
+const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function ruleSet(mode) {
+  const rs = GL.rules.filter(r => r.from && (mode === 'speech' || r.scope === 'all'));
+  if (GL.quotes) rs.push({ from: '“', to: '「', q: 1 }, { from: '”', to: '」', q: 1 });
+  return rs.sort((a, b) => b.from.length - a.from.length);
+}
+function segments(text, mode) {
+  const rs = ruleSet(mode); if (!rs.length) return [{ t: text }];
+  const map = new Map(rs.map(r => [r.from, r]));
+  const re = new RegExp(rs.map(r => esc(r.from)).join('|'), 'g');
+  const out = []; let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push({ t: text.slice(last, m.index) });
+    const r = map.get(m[0]); out.push({ t: r.to, from: m[0], q: r.q }); last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ t: text.slice(last) });
+  return out;
+}
+const applyGL = (t, mode) => segments(t, mode).map(x => x.t).join('');
+
+/* ---------- screens ---------- */
+let current = 'title', returnTo = 'title';
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); current = id; window.scrollTo(0, 0); }
+function where(a, b) { $('whereSmall').textContent = a; $('whereBig').textContent = b; }
+let toastT;
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 4500); }
+
+/* ---------- voices ---------- */
+let voices = [];
+function loadVoices() {
+  if (!window.speechSynthesis) return;
+  const all = speechSynthesis.getVoices();
+  const zh = all.filter(v => /^zh|cmn|yue/i.test(v.lang));
+  // 預設優先：Apple 台灣中文語音（美佳 Meijia），增強／高品質版優先
+  const isApple = v => /^com\.apple/i.test(v.voiceURI) || /Meijia|美佳|Mei-Jia|Tingting|婷婷|Sinji|善怡/i.test(v.name);
+  const score = v => (/TW|Hant/i.test(v.lang) ? 0 : /HK/i.test(v.lang) ? 20 : 40)
+    + (isApple(v) ? 0 : 10)
+    - (/Premium|Enhanced|高品質|增強|進階/i.test(v.name + v.voiceURI) ? 5 : 0);
+  voices = zh.sort((a, b) => score(a) - score(b));
+  const sel = $('voiceSel'); sel.replaceChildren();
+  if (!voices.length) { const o = document.createElement('option'); o.textContent = '這台裝置沒有中文語音'; o.value = ''; sel.append(o); return; }
+  voices.forEach(v => { const o = document.createElement('option'); o.value = v.voiceURI; o.textContent = `${v.name}（${v.lang}）`; sel.append(o); });
+  sel.value = voices.some(v => v.voiceURI === S.voiceURI) ? S.voiceURI : voices[0].voiceURI;
+}
+if (window.speechSynthesis) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+const pickVoice = () => voices.find(v => v.voiceURI === S.voiceURI) || voices[0] || null;
+
+/* ---------- Gemini via OpenRouter ---------- */
+const audioCache = new Map();
+function wavFromPcm(buf, rate = 24000) {
+  const pcm = new Uint8Array(buf), h = new ArrayBuffer(44), v = new DataView(h);
+  const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + pcm.length, true); w(8, 'WAVE'); w(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, pcm.length, true);
+  return new Blob([h, pcm], { type: 'audio/wav' });
+}
+function synth(text) {
+  const style = (S.style || '').trim(), input = style ? `${style}\n${text}` : text;
+  const k = `${S.model}|${S.gvoice}|${input}`;
+  if (audioCache.has(k)) return audioCache.get(k);
+  const p = (async () => {
+    const r = await fetch('https://openrouter.ai/api/v1/audio/speech', {
+      method: 'POST', headers: { 'Authorization': `Bearer ${S.key}`, 'Content-Type': 'application/json', 'X-Title': 'Arkham Script Reader' },
+      body: JSON.stringify({ model: S.model, input, voice: S.gvoice, response_format: 'mp3' })
+    });
+    if (!r.ok) { let m = `HTTP ${r.status}`; try { const j = await r.json(); m = (j.error && (j.error.message || j.error)) || m; } catch (e) {} throw new Error(m); }
+    const type = (r.headers.get('content-type') || '').toLowerCase(), buf = await r.arrayBuffer();
+    return URL.createObjectURL(/pcm|l16|octet/.test(type) ? wavFromPcm(buf) : new Blob([buf], { type: type || 'audio/mpeg' }));
+  })();
+  audioCache.set(k, p); p.catch(() => audioCache.delete(k));
+  return p;
+}
+
+/* ---------- ambience ---------- */
+let ctx = null, amb = null;
+function ensureCtx() { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; if (!ctx) ctx = new AC(); ctx.resume(); return ctx; }
+function startAmb() {
+  const c = ensureCtx(); if (!c) return false;
+  const master = c.createGain(); master.gain.value = 0; master.connect(c.destination);
+  const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 360; lp.connect(master);
+  const nodes = [];
+  [[55, 'triangle', .16, .05], [77.8, 'triangle', .07, .07], [110.6, 'sine', .035, .11]].forEach(([f, t, g0, lf]) => {
+    const o = c.createOscillator(); o.type = t; o.frequency.value = f;
+    const g = c.createGain(); g.gain.value = g0;
+    const l = c.createOscillator(); l.frequency.value = lf; const lg = c.createGain(); lg.gain.value = g0 * .6;
+    l.connect(lg); lg.connect(g.gain); o.connect(g); g.connect(lp); o.start(); l.start(); nodes.push(o, l);
+  });
+  const len = c.sampleRate * 2, buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const rain = c.createBufferSource(); rain.buffer = buf; rain.loop = true;
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
+  const rl = c.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 2000;
+  const rg = c.createGain(); rg.gain.value = .05;
+  rain.connect(hp); hp.connect(rl); rl.connect(rg); rg.connect(master); rain.start(); nodes.push(rain);
+  master.gain.linearRampToValueAtTime(.5, c.currentTime + 3);
+  amb = { master, nodes }; return true;
+}
+function stopAmb() {
+  if (!amb || !ctx) return; const { master, nodes } = amb; amb = null;
+  master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+  master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
+  setTimeout(() => { nodes.forEach(n => { try { n.stop(); } catch (e) {} }); master.disconnect(); }, 1600);
+}
+
+/* ---------- player ---------- */
+const P = { list: [], i: 0, done: false, full: false, run: 0, stopFns: [], after: null, revealed: 0, cur: '' };
+function weights(t) {
+  const w = [...t].map(c => 1 + ('，、；：'.includes(c) ? 2 : 0) + ('。！？'.includes(c) ? 4 : 0) + ('…—'.includes(c) ? 1 : 0));
+  const cum = []; w.reduce((a, x, i) => (cum[i] = a + x), 0); return cum;
+}
+function render(n) {
+  const t = P.cur; n = Math.max(0, Math.min(t.length, n));
+  if (n === P.revealed) return;
+  P.revealed = n; $('shown').textContent = t.slice(0, n); $('rest').textContent = t.slice(n);
+}
+function stopPlayback() {
+  P.run++; P.stopFns.forEach(f => { try { f(); } catch (e) {} }); P.stopFns = [];
+  if (window.speechSynthesis) speechSynthesis.cancel();
+}
+function narrate(list, after) {
+  stopPlayback();
+  P.list = list.filter(x => x.text); P.after = after;
+  show('story'); $('after').classList.remove('on');
+  if (!P.list.length) { finishAll(); return; }
+  playPassage(0);
+}
+function splitSent(t) { return (t.match(/[^。！？]+[。！？]*[」』”）]*/g) || [t]).filter(s => s.trim()); }
+function playPassage(i) {
+  if ((S.reveal || 'sentence') === 'type') { playTyped(i); return; }
+  stopPlayback();
+  P.i = i; P.done = false; P.full = false; P.mode = S.reveal;
+  const item = P.list[i], run = P.run;
+  const raw = S.reveal === 'full' ? [item.text] : splitSent(item.text);
+  const disp = raw.map(s => applyGL(s, 'display')), sp = raw.map(s => applyGL(s, 'speech'));
+  P.cur = disp.join('');
+  $('storyLabel').textContent = item.label || '';
+  $('storyCount').textContent = `${i + 1} / ${P.list.length}`;
+  $('under').textContent = ''; $('under').classList.remove('caret');
+  const box = $('shown'); box.replaceChildren(); $('rest').textContent = '';
+  const els = disp.map(t => { const s = document.createElement('span'); s.className = 'sent todo'; s.textContent = t; box.append(s); return s; });
+  P.sentEls = els;
+  const mark = k => els.forEach((e, j) => { e.className = 'sent ' + (j < k ? 'done' : j === k ? 'now' : 'todo'); });
+  const v = (S.engine === 'browser' || S.engine === 'openrouter') && window.speechSynthesis ? pickVoice() : null;
+  const deviceOnly = (text, cb) => {
+    if (!v) { const t = setTimeout(cb, Math.max(1200, text.length * 140)); P.stopFns.push(() => clearTimeout(t)); return; }
+    const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch;
+    let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
+    u.onend = once; u.onerror = () => { const t = setTimeout(once, 400); P.stopFns.push(() => clearTimeout(t)); };
+    speechSynthesis.speak(u);
+  };
+  const speakOne = (text, cb, k) => {
+    if (S.engine !== 'openrouter' || !S.key) { deviceOnly(text, cb); return; }
+    synth(text).then(url => {
+      if (run !== P.run) return;
+      const a = new Audio(url); let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
+      P.stopFns.push(() => a.pause());
+      a.onended = once; a.onerror = () => deviceOnly(text, once);
+      a.play().catch(() => deviceOnly(text, once));
+      if (sp[k + 1]) synth(sp[k + 1]).catch(() => {});
+      else if (P.list[P.i + 1]) splitSent(applyGL(P.list[P.i + 1].text, 'speech')).slice(0, 1).forEach(t => synth(t).catch(() => {}));
+    }).catch(err => {
+      if (run !== P.run) return;
+      if (!P.warned) { P.warned = true; toast(`Gemini 語音失敗：${err.message}。先改用裝置語音。`); }
+      deviceOnly(text, cb);
+    });
+  };
+  const step = k => {
+    if (run !== P.run) return;
+    if (k >= els.length) { P.done = true; els.forEach(e => e.className = 'sent now'); onPassageEnd(run); return; }
+    mark(k);
+    speakOne(sp[k], () => { if (run === P.run) step(k + 1); }, k);
+  };
+  step(0);
+}
+function playTyped(i) {
+  P.mode = 'type';
+  stopPlayback();
+  P.i = i; P.done = false; P.full = false; P.revealed = -1;
+  const item = P.list[i], text = applyGL(item.text, 'display'), speech = applyGL(item.text, 'speech'), run = P.run;
+  P.cur = text;
+  $('storyLabel').textContent = item.label || '';
+  $('storyCount').textContent = `${i + 1} / ${P.list.length}`;
+  $('under').textContent = ''; $('under').classList.remove('caret');
+  render(0);
+  const cum = weights(text), total = cum[cum.length - 1] || 1;
+  const byFrac = f => { let k = 0; const target = f * total; while (k < cum.length && cum[k] <= target) k++; return k; };
+  const progress = f => { if (run !== P.run || P.done || P.full) return; render(byFrac(Math.min(1, f))); };
+  const end = () => { if (run !== P.run || P.done) return; P.done = true; render(text.length); onPassageEnd(run); };
+  const timed = spw => {
+    const dur = total * spw * 1000, t0 = performance.now();
+    let raf = requestAnimationFrame(function step(now) { const f = (now - t0) / dur; progress(f); if (f >= 1) end(); else raf = requestAnimationFrame(step); });
+    P.stopFns.push(() => cancelAnimationFrame(raf));
+  };
+  const v = S.engine === 'browser' ? pickVoice() : null;
+  if (!v || !window.speechSynthesis) { timed(0.11); return; }
+  const u = new SpeechSynthesisUtterance(speech); u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch;
+  const est = total * 0.13 / S.rate * 1000, t0 = performance.now(); let raf;
+  const loop = now => { progress(Math.min(.97, (now - t0) / est)); raf = requestAnimationFrame(loop); };
+  u.onboundary = e => { if (run === P.run && !P.full) render(Math.max(P.revealed, Math.round(e.charIndex * text.length / Math.max(1, speech.length)))); };
+  u.onend = () => { cancelAnimationFrame(raf); end(); };
+  u.onerror = () => { cancelAnimationFrame(raf); if (run === P.run && !P.done) timed(0.06); };
+  P.stopFns.push(() => cancelAnimationFrame(raf));
+  speechSynthesis.speak(u); raf = requestAnimationFrame(loop);
+}
+function onPassageEnd(run) {
+  if (P.i >= P.list.length - 1) { $('under').textContent = ''; finishAll(); return; }
+  $('under').textContent = '▼'; $('under').classList.add('caret');
+  if (auto) { const t = setTimeout(() => { if (run === P.run) playPassage(P.i + 1); }, 900); P.stopFns.push(() => clearTimeout(t)); }
+}
+function finishAll() {
+  const a = P.after || {}, fx = $('effects');
+  fx.replaceChildren();
+  if (a.effects && a.effects.length) {
+    const h = document.createElement('h3'); h.textContent = a.effectsTitle || '照卡面執行'; fx.append(h);
+    a.effects.forEach(line => { const p = document.createElement('p'); p.textContent = applyGL(line, 'display'); fx.append(p); });
+    fx.hidden = false;
+  } else fx.hidden = true;
+  $('afterBtn').textContent = a.label || '繼續';
+  $('after').classList.add('on');
+  $('afterBtn').focus({ preventScroll: true });
+}
+function storyTap() {
+  ensureCtx();
+  if (!P.list.length) return;
+  if (P.mode !== 'type' && !P.done) {
+    stopPlayback(); P.done = true; (P.sentEls || []).forEach(e => e.className = 'sent now');
+    if (P.i >= P.list.length - 1) { finishAll(); return; }
+    $('under').textContent = '▼'; $('under').classList.add('caret'); return;
+  }
+  if (!P.done && !P.full) { P.full = true; render(P.cur.length); return; }
+  if (P.i < P.list.length - 1) { playPassage(P.i + 1); return; }
+  if (!P.done) { stopPlayback(); P.done = true; render(P.cur.length); $('under').textContent = ''; finishAll(); }
+}
+$('storyTap').addEventListener('click', storyTap);
+$('storyTap').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); storyTap(); } });
+$('afterBtn').addEventListener('click', () => { stopPlayback(); const f = P.after && P.after.then; P.list = []; if (f) f(); });
+
+/* ---------- home ---------- */
+let CUR = null, homeCycle = null;
+function progressText(p) {
+  const sc = findSc(p.scenarioId); if (!sc) return '';
+  return p.phase === 'game' ? `${sc.title} · 密謀 ${ROMAN[(sc.agenda[p.ag] || {}).stage] || ''}／場景 ${ROMAN[(sc.act[p.ac] || {}).stage] || ''}` : `${sc.title} · 開場`;
+}
+function resume() {
+  const p = save().progress; if (!p) return;
+  CUR = findSc(p.scenarioId); homeCycle = CUR.cycle.id;
+  G.ag = p.ag || 0; G.ac = p.ac || 0; G.history = (p.history || []).slice();
+  if (p.phase === 'game') toGame(); else toTitle();
+}
+function renderHome() {
+  const s = save();
+  $('saveName').textContent = s.name;
+  const cb = $('continueBtn');
+  if (s.progress && findSc(s.progress.scenarioId)) { cb.hidden = false; cb.textContent = `繼續：${progressText(s.progress)}`; } else cb.hidden = true;
+  if (!CYCLES.length) return;
+  if (!homeCycle || !CYCLES.some(c => c.id === homeCycle)) homeCycle = CYCLES[0].id;
+  const tabs = $('cycleTabs'); tabs.replaceChildren();
+  CYCLES.forEach(cy => {
+    const b = document.createElement('button'); b.className = 'tab'; b.textContent = cy.name;
+    b.setAttribute('aria-pressed', cy.id === homeCycle);
+    b.onclick = () => { homeCycle = cy.id; renderHome(); };
+    tabs.append(b);
+  });
+  const list = $('scList'); list.replaceChildren();
+  CYCLES.find(c => c.id === homeCycle).scenarios.forEach(sc => {
+    const b = document.createElement('button'); b.className = 'sc-row';
+    const code = document.createElement('span'); code.className = 'code'; code.textContent = sc.code;
+    const mid = document.createElement('span'); const st = document.createElement('strong'); st.textContent = sc.title;
+    const sm = document.createElement('small'); sm.textContent = sc.kind === 'story' ? '劇情朗讀' : `${sc.agenda.length} 張密謀 · ${sc.act.length} 張場景 · ${resIds(sc).length} 種結局`;
+    mid.append(st, sm);
+    const go = document.createElement('span'); go.className = 'go';
+    const doing = s.progress && s.progress.scenarioId === sc.id, done = s.results[sc.id];
+    if (doing) { go.textContent = '進行中'; go.classList.add('doing'); }
+    else if (done) { go.textContent = `已完成 · ${resLabel(done.res)}`; go.classList.add('done'); }
+    else go.textContent = '開始';
+    b.append(code, mid, go);
+    b.onclick = () => { CUR = sc; store.set('asr.last', sc.id); if (doing) resume(); else toTitle(); };
+    list.append(b);
+  });
+}
+function toHome() { stopPlayback(); renderHome(); where('詭鎮劇本朗讀器', '選擇關卡'); show('home'); }
+
+/* ---------- game flow ---------- */
+const G = { ag: 0, ac: 0, history: [] };
+function toTitle() {
+  stopPlayback(); where(CUR.cycle.name, CUR.title);
+  $('titleSmall').textContent = CUR.kind === 'story' ? 'Prologue' : `Scenario ${CUR.code}`; $('titleBig').textContent = CUR.title;
+  show('title');
+}
+function startIntro() {
+  G.ag = 0; G.ac = 0; G.history = [];
+  saveProgress('intro');
+  where(CUR.cycle.name, `${CUR.title} · 開場`);
+  if (CUR.kind === 'story') { storyFlow(); return; }
+  narrate(chunks(CUR.intro).map(t => ({ text: t, label: '開場' })), {
+    effects: CUR.setup || [], effectsTitle: '設置（照戰役手冊擺好後再繼續）',
+    label: '開始遊戲', then: () => narrate([...cardItems(CUR.agenda[0], '密謀'), ...cardItems(CUR.act[0], '場景')], { label: '進入遊戲', then: toGame })
+  });
+}
+function storyFlow() {
+  const sc = CUR, extras = (sc.extra || []).slice();
+  const finish = () => { saveResult(sc, 'done'); toHome(); };
+  const nextExtra = () => {
+    const o = extras.shift(); if (!o) { finish(); return; }
+    choose(o.ask, [
+      { label: '有', fn: () => narrate(chunks(o.text).map(t => ({ text: t, label: o.label })), { label: '繼續', then: nextExtra }) },
+      { label: '沒有', fn: nextExtra }
+    ]);
+  };
+  narrate(chunks(sc.intro).map(t => ({ text: t, label: sc.title })), { label: extras.length ? '繼續' : '完成，回到選擇關卡', then: nextExtra });
+}
+function toGame() {
+  stopPlayback(); where(CUR.cycle.name, `${CUR.title} · 進行中`);
+  saveProgress('game');
+  const ag = CUR.agenda[G.ag], ac = CUR.act[G.ac];
+  $('agNum').textContent = ROMAN[ag.stage]; $('agSmall').textContent = `密謀 · ${ag.stage} / ${maxStage(CUR.agenda)}`;
+  $('agName').textContent = applyGL(ag.name, 'display'); $('agNeed').textContent = ag.need; $('agFlavor').textContent = applyGL(ag.flavor, 'display');
+  $('acNum').textContent = ROMAN[ac.stage]; $('acSmall').textContent = `場景 · ${ac.stage} / ${maxStage(CUR.act)}`;
+  $('acName').textContent = applyGL(ac.name, 'display'); $('acNeed').textContent = ac.need; $('acFlavor').textContent = applyGL(ac.flavor, 'display');
+  show('game');
+}
+const maxStage = list => Math.max(...list.map(c => c.stage));
+const nextCandidates = (list, c) => list.map((x, j) => [x, j]).filter(([x]) => x.stage === c.stage + 1);
+function advance(kind) {
+  const isAg = kind === 'agenda', list = isAg ? CUR.agenda : CUR.act, word = isAg ? '密謀' : '場景';
+  const idx0 = isAg ? G.ag : G.ac, c0 = list[idx0];
+  const setIdx = j => { G.history.push({ ag: G.ag, ac: G.ac }); if (isAg) G.ag = j; else G.ac = j; };
+  // 同一張正面、背面不同的版本（例如謝幕的場景 2）：翻開後選背面
+  const variants = list.map((x, j) => [x, j]).filter(([x]) => x.stage === c0.stage && x.name === c0.name);
+  if (variants.length > 1) {
+    choose(`翻開${word} ${ROMAN[c0.stage]}「${applyGL(c0.name, 'display')}」，背面的標題是哪一個？`,
+      variants.map(([x, j]) => ({ label: applyGL(x.backName || x.name, 'display'), fn: () => { if (j !== idx0) { if (isAg) G.ag = j; else G.ac = j; } flipBack(isAg, list, word, j, setIdx); } })));
+    return;
+  }
+  flipBack(isAg, list, word, idx0, setIdx);
+}
+function flipBack(isAg, list, word, idx, setIdx) {
+  const c = list[idx];
+  const effects = c.backText.split(/\n+/).filter(Boolean), effectsTitle = `${word} ${ROMAN[c.stage]} 背面：照卡面執行`;
+  if (c.res.length) {
+    G.history.push({ ag: G.ag, ac: G.ac });
+    const go = () => c.res.length === 1 ? resolution(c.res[0]) : choose('依卡背的決定，進入哪一個結局？', c.res.map(id => ({ label: resLabel(id), fn: () => resolution(id) })));
+    narrate(cardItems(c, word, true), { effects, effectsTitle, label: c.res.length === 1 ? `進入${resLabel(c.res[0])}` : '選擇結局', then: go });
+    return;
+  }
+  // 下一階段依正面名稱分組；同名的多個版本先當成同一張
+  const groups = [];
+  list.forEach((x, j) => { if (x.stage === c.stage + 1 && !groups.some(g => g.name === x.name)) groups.push({ name: x.name, j }); });
+  if (groups.length > 1) {
+    narrate(cardItems(c, word, true), { effects, effectsTitle, label: '選擇翻到的下一張',
+      then: () => pickBranch(word, c, groups.map(g => [list[g.j], g.j]), j => { setIdx(j); narrate(cardItems(list[j], word), { label: '回到遊戲', then: toGame }); }) });
+    return;
+  }
+  if (groups[0]) setIdx(groups[0].j); else G.history.push({ ag: G.ag, ac: G.ac });
+  narrate([...cardItems(c, word, true), ...(groups[0] ? cardItems(list[groups[0].j], word) : [])], { effects, effectsTitle, label: groups[0] ? '回到遊戲' : '回到遊戲（這疊已經到底）', then: toGame });
+}
+function choose(text, options) {
+  $('branchText').textContent = text;
+  const list = $('branchList'); list.replaceChildren();
+  options.forEach(o => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = o.label; b.onclick = () => { $('branchPick').close(); o.fn(); }; list.append(b); });
+  $('branchPick').showModal();
+}
+function pickBranch(word, from, cands, done) {
+  $('branchText').textContent = `照${word} ${ROMAN[from.stage]} 背面的指示，你們翻到的是哪一張？看手上那張卡的名稱點選。`;
+  const list = $('branchList'); list.replaceChildren();
+  cands.forEach(([card, j]) => {
+    const b = document.createElement('button'); b.className = 'btn';
+    b.textContent = `${word} ${ROMAN[card.stage]}・${applyGL(card.name, 'display')}`;
+    b.onclick = () => { $('branchPick').close(); done(j); };
+    list.append(b);
+  });
+  toGame(); $('branchPick').showModal();
+}
+function resolution(id) {
+  const r = CUR.resolutions[id];
+  saveResult(CUR, id);
+  where(CUR.cycle.name, `${CUR.title} · ${resLabel(id)}`);
+  narrate(chunks(r.text).map(t => ({ text: t, label: resLabel(id) })), { effects: r.log, effectsTitle: '本關結算', label: '回到選擇關卡', then: toHome });
+}
+let pendingAction = null;
+function confirmThen(text, cls, fn) { pendingAction = fn; $('confirmText').textContent = text; $('cYes').className = 'btn solid ' + cls; $('confirm').showModal(); }
+$('cNo').onclick = () => { pendingAction = null; $('confirm').close(); };
+$('cYes').onclick = () => { $('confirm').close(); const f = pendingAction; pendingAction = null; if (f) f(); };
+$('agAdv').onclick = () => confirmThen('確定推進密謀？翻過去就會看到下一張的內容。', 'blood', () => advance('agenda'));
+$('acAdv').onclick = () => confirmThen('確定推進場景？翻過去就會看到下一張的內容。', 'verd', () => advance('act'));
+$('agRead').onclick = () => { ensureCtx(); narrate(cardItems(CUR.agenda[G.ag], '密謀'), { label: '回到遊戲', then: toGame }); };
+$('acRead').onclick = () => { ensureCtx(); narrate(cardItems(CUR.act[G.ac], '場景'), { label: '回到遊戲', then: toGame }); };
+$('undoBtn').onclick = () => { const h = G.history.pop(); if (!h) { toast('已經是第一張了'); return; } G.ag = h.ag; G.ac = h.ac; toGame(); };
+$('resBtn').onclick = () => {
+  const list = $('resList'); list.replaceChildren();
+  resIds(CUR).forEach(id => {
+    const b = document.createElement('button'); b.className = 'btn' + (id === 'no_resolution' ? ' blood' : '');
+    b.textContent = id === 'no_resolution' ? '無結局（全員撤退或被擊敗）' : resLabel(id);
+    b.onclick = () => { $('resPick').close(); resolution(id); }; list.append(b);
+  });
+  $('resPick').showModal();
+};
+$('resCancel').onclick = () => $('resPick').close();
+$('titleTap').addEventListener('click', () => { ensureCtx(); startIntro(); });
+$('titleTap').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ensureCtx(); startIntro(); } });
+
+/* ---------- library（文本庫） ---------- */
+const LIB = { cycle: 'all', scenario: 'all', q: '', scroll: 0 };
+function fillMarked(el, text, q) {
+  el.replaceChildren();
+  const addText = (parent, t) => {
+    if (!q) { parent.append(document.createTextNode(t)); return; }
+    t.split(q).forEach((part, i) => {
+      if (i) { const h = document.createElement('mark'); h.className = 'hit'; h.textContent = q; parent.append(h); }
+      if (part) parent.append(document.createTextNode(part));
+    });
+  };
+  segments(text, 'display').forEach(sg => {
+    if (sg.from && !sg.q) { const m = document.createElement('mark'); m.title = `原文：${sg.from}`; addText(m, sg.t); el.append(m); }
+    else addText(el, sg.t);
+  });
+}
+function fillLibSelects() {
+  const cs = $('libCycle'); cs.replaceChildren();
+  [['all', '全部循環'], ...CYCLES.map(c => [c.id, c.name])].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; cs.append(o); });
+  cs.value = LIB.cycle;
+  const ss = $('libScenario'); ss.replaceChildren();
+  const pool = LIB.cycle === 'all' ? allScenarios() : CYCLES.find(c => c.id === LIB.cycle).scenarios;
+  [['all', '全部關卡'], ...pool.map(s => [s.id, `${s.code} · ${s.title}`])].forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; ss.append(o); });
+  if (!pool.some(s => s.id === LIB.scenario)) LIB.scenario = 'all';
+  ss.value = LIB.scenario;
+}
+function renderLibrary() {
+  const body = $('libBody'); body.replaceChildren();
+  const q = LIB.q.trim();
+  let pool = LIB.cycle === 'all' ? allScenarios() : CYCLES.find(c => c.id === LIB.cycle).scenarios;
+  if (LIB.scenario !== 'all') pool = pool.filter(s => s.id === LIB.scenario);
+  let paras = 0, hits = 0;
+  pool.forEach(sc => {
+    const wrap = document.createElement('div'); wrap.className = 'lib-sc';
+    const h = document.createElement('h3'); const sm = document.createElement('small'); sm.textContent = `${sc.cycle.name} · ${sc.code}`;
+    h.append(sm, document.createTextNode(sc.title)); wrap.append(h);
+    let scHits = 0;
+    sections(sc).forEach(sec => {
+      const flat = sec.groups.flatMap(g => g.items); let k = 0, secShown = false;
+      const secEl = document.createElement('div'); secEl.className = 'lib-sec'; secEl.textContent = sec.title;
+      sec.groups.forEach(g => {
+        const showItems = [];
+        g.items.forEach(it => { const idx = k++; paras++; if (!q || applyGL(it.text, 'display').includes(q)) showItems.push([it, idx]); });
+        const fxLines = g.fx ? g.fx.split(/\n+/).filter(Boolean).filter(l => !q || applyGL(l, 'display').includes(q)) : [];
+        if (!showItems.length && !fxLines.length) return;
+        if (!secShown) { wrap.append(secEl); secShown = true; }
+        const sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = g.sub; wrap.append(sub);
+        showItems.forEach(([it, idx]) => {
+          scHits++; const b = document.createElement('button'); b.className = 'para'; fillMarked(b, it.text, q);
+          b.onclick = () => { ensureCtx(); LIB.scroll = window.scrollY; CUR = sc; narrate(flat.slice(idx), { label: '回到文本庫', then: () => openLibrary(true) }); };
+          wrap.append(b);
+        });
+        fxLines.forEach(line => { scHits++; const p = document.createElement('p'); p.className = 'fxline'; fillMarked(p, line, q); wrap.append(p); });
+      });
+    });
+    hits += scHits;
+    if (scHits) body.append(wrap);
+  });
+  $('libCount').textContent = q ? `找到 ${hits} 處含「${q}」` : `共 ${pool.length} 個關卡、${paras} 段朗讀文字`;
+}
+function openLibrary(restore) {
+  if (!OVERLAYS.includes(current)) { returnTo = current; if (!restore) { LIB.cycle = CUR.cycle.id; LIB.scenario = CUR.id; } }
+  stopPlayback(); fillLibSelects(); renderLibrary(); where('全部循環', '文本庫'); show('library');
+  if (restore) window.scrollTo(0, LIB.scroll);
+}
+$('libCycle').onchange = () => { LIB.cycle = $('libCycle').value; LIB.scenario = 'all'; fillLibSelects(); renderLibrary(); };
+$('libScenario').onchange = () => { LIB.scenario = $('libScenario').value; renderLibrary(); };
+$('libSearch').oninput = () => { LIB.q = $('libSearch').value; renderLibrary(); };
+const OVERLAYS = ['library', 'glossary', 'settings', 'story', 'saves'];
+function back() {
+  if (returnTo === 'game') toGame(); else if (returnTo === 'library') openLibrary(true);
+  else if (returnTo === 'home') toHome(); else toTitle();
+}
+
+/* ---------- glossary screen ---------- */
+const allText = () => allScenarios().flatMap(sc => sections(sc).flatMap(s => s.groups.flatMap(g => g.items.map(i => i.text).concat(g.fx || '')))).join('\n');
+const countIn = w => w ? allText().split(w).length - 1 : 0;
+function renderGlossary() {
+  const box = $('gRules'); box.replaceChildren();
+  GL.rules.forEach((r, i) => {
+    const row = document.createElement('div'); row.className = 'rule-row';
+    const t = document.createElement('div'); t.className = 'r'; t.textContent = `${r.from} → ${r.to || '（刪除）'}`;
+    const sm = document.createElement('small'); sm.textContent = `${r.scope === 'all' ? '文字和朗讀' : '只改讀音'} · 全部文本出現 ${countIn(r.from)} 次`; t.append(sm);
+    const del = document.createElement('button'); del.className = 'small-btn'; del.textContent = '刪除';
+    del.onclick = () => { GL.rules.splice(i, 1); saveGL(); renderGlossary(); };
+    row.append(t, del); box.append(row);
+  });
+  $('gQuotes').checked = !!GL.quotes;
+  const chips = $('gChips'); chips.replaceChildren();
+  const all = allText(), found = new Map();
+  (all.match(/[\u4e00-\u9fff]{1,6}[·・‧][\u4e00-\u9fff]{1,6}/g) || []).forEach(n => found.set(n, (found.get(n) || 0) + 1));
+  (all.match(/[「“]([^」”\n]{1,8})[」”]/g) || []).forEach(n => { n = n.slice(1, -1); found.set(n, (found.get(n) || 0) + 1); });
+  allNames().forEach(n => { const c = all.split(n).length - 1; if (c) found.set(n, Math.max(found.get(n) || 0, c)); });
+  [...found].filter(([n]) => !GL.rules.some(r => r.from === n)).sort((a, b) => b[1] - a[1]).slice(0, 30).forEach(([n, c]) => {
+    const b = document.createElement('button'); b.className = 'chip'; b.textContent = n;
+    const sm = document.createElement('small'); sm.textContent = `×${c}`; b.append(sm);
+    b.onclick = () => { $('gFrom').value = n; $('gTo').value = n; $('gTo').focus(); $('gTo').select(); };
+    chips.append(b);
+  });
+}
+function openGlossary() { if (!OVERLAYS.includes(current) || current === 'library') returnTo = current; stopPlayback(); renderGlossary(); $('gStatus').textContent = ''; where('全部循環', '名詞替換'); show('glossary'); }
+$('gAdd').onclick = () => {
+  const from = $('gFrom').value.trim(), to = $('gTo').value.trim(), st = $('gStatus'), scope = $('gScope').value;
+  st.classList.remove('err');
+  if (!from) { st.classList.add('err'); st.textContent = '先填「原本的字」。'; return; }
+  if (from === to) { st.classList.add('err'); st.textContent = '「改成」和原本的字一樣，請改成你要的用字。'; return; }
+  GL.rules = GL.rules.filter(r => !(r.from === from && r.scope === scope));
+  GL.rules.push({ from, to, scope }); saveGL();
+  st.textContent = `已加入：${from} → ${to || '（刪除）'}，出現 ${countIn(from)} 次。`;
+  $('gFrom').value = ''; $('gTo').value = ''; renderGlossary();
+};
+$('gQuotes').onchange = () => { GL.quotes = $('gQuotes').checked; saveGL(); };
+$('gExport').onclick = async () => {
+  const code = JSON.stringify({ v: 1, rules: GL.rules, quotes: GL.quotes }); $('gShare').value = code;
+  try { await navigator.clipboard.writeText(code); $('gStatus').textContent = '已複製到剪貼簿，可以直接貼給同好。'; }
+  catch (e) { $('gStatus').textContent = '代碼在下方欄位，請手動複製。'; }
+};
+$('gImport').onclick = () => {
+  const st = $('gStatus'); st.classList.remove('err');
+  try {
+    const j = JSON.parse($('gShare').value); if (!Array.isArray(j.rules)) throw new Error();
+    let added = 0;
+    j.rules.forEach(r => { if (r && r.from && !GL.rules.some(x => x.from === r.from && x.scope === r.scope)) { GL.rules.push({ from: String(r.from), to: String(r.to || ''), scope: r.scope === 'speech' ? 'speech' : 'all' }); added++; } });
+    if (typeof j.quotes === 'boolean') GL.quotes = j.quotes;
+    saveGL(); renderGlossary(); st.textContent = `已匯入 ${added} 條（重複的略過）。`;
+  } catch (e) { st.classList.add('err'); st.textContent = '代碼格式不對，請確認是從這個工具匯出的。'; }
+};
+$('gDone').onclick = back;
+
+/* ---------- settings ---------- */
+function openSettings() {
+  if (!OVERLAYS.includes(current) || current === 'library') returnTo = current; stopPlayback();
+  document.querySelectorAll('input[name=engine]').forEach(r => r.checked = r.value === S.engine);
+  document.querySelectorAll('input[name=reveal]').forEach(r => r.checked = r.value === (S.reveal || 'sentence'));
+  $('keyIn').value = S.key || ''; $('modelIn').value = S.model; $('gvoiceIn').value = S.gvoice; $('styleIn').value = S.style;
+  loadVoices();
+  $('rateIn').value = S.rate; $('rateOut').textContent = (+S.rate).toFixed(2);
+  $('pitchIn').value = S.pitch; $('pitchOut').textContent = (+S.pitch).toFixed(2);
+  $('setStatus').textContent = voices.length ? '' : '這台裝置沒有中文語音，會改成只顯示文字。';
+  where('全部循環', '朗讀設定'); show('settings');
+}
+function readForm() {
+  const e = document.querySelector('input[name=engine]:checked'); S.engine = e ? e.value : 'browser';
+  const rv = document.querySelector('input[name=reveal]:checked'); S.reveal = rv ? rv.value : 'sentence';
+  S.key = $('keyIn').value.trim(); S.model = $('modelIn').value.trim() || 'google/gemini-3.8-flash-tts'; S.gvoice = $('gvoiceIn').value; S.style = $('styleIn').value;
+  S.voiceURI = $('voiceSel').value; S.rate = +$('rateIn').value; S.pitch = +$('pitchIn').value;
+  store.set('asr.settings', S);
+}
+$('rateIn').oninput = () => { $('rateOut').textContent = (+$('rateIn').value).toFixed(2); };
+$('pitchIn').oninput = () => { $('pitchOut').textContent = (+$('pitchIn').value).toFixed(2); };
+$('testBtn').onclick = () => {
+  readForm(); const v = pickVoice(), st = $('setStatus');
+  if (S.engine === 'openrouter') {
+    if (!S.key) { st.textContent = '還沒填 OpenRouter 金鑰。'; return; }
+    st.textContent = '正在產生 Gemini 試聽…';
+    synth(applyGL('夜已經深了。劇院的燈還亮著，可是那裡，應該空無一人。', 'speech')).then(url => { new Audio(url).play(); st.textContent = `播放中：${S.model} · ${S.gvoice}`; })
+      .catch(err => { st.textContent = `試聽失敗：${err.message}`; });
+    return;
+  }
+  if (S.engine === 'silent') { st.textContent = '目前設定為不出聲。'; return; }
+  if (!v || !window.speechSynthesis) { st.textContent = '這台裝置沒有中文語音。'; return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(applyGL('夜已經深了。圖書館那盞燈還亮著，可是那裡，應該空無一人。', 'speech'));
+  u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch; speechSynthesis.speak(u);
+  st.textContent = `試聽中：${v.name}`;
+};
+$('saveBtn').onclick = () => { readForm(); back(); };
+
+/* ---------- saves screen ---------- */
+function renderSaves() {
+  const list = $('saveList'); list.replaceChildren();
+  Object.values(SV.list).sort((a, b) => b.updated - a.updated).forEach(s => {
+    const row = document.createElement('label'); row.className = 'save-item';
+    const r = document.createElement('input'); r.type = 'radio'; r.name = 'saveSel'; r.checked = s.id === SV.active;
+    r.onchange = () => { SV.active = s.id; persist(); renderSaves(); $('saveStatus').textContent = `已切換到「${s.name}」。`; };
+    const sm = document.createElement('small'); sm.textContent = `完成 ${Object.keys(s.results).length} 關 · ${fmtTime(s.updated)}`;
+    row.append(r, document.createTextNode(s.name), sm); list.append(row);
+  });
+  const lb = $('logBody'); lb.replaceChildren();
+  const s = save();
+  if (!s.log.length && !Object.keys(s.results).length) { const p = document.createElement('p'); p.textContent = '還沒有完成任何關卡。'; lb.append(p); return; }
+  allScenarios().filter(sc => s.results[sc.id]).forEach(sc => {
+    const h = document.createElement('h3'); h.textContent = `${sc.cycle.name} · ${sc.code} ${sc.title} — ${resLabel(s.results[sc.id].res)}`; lb.append(h);
+    s.log.filter(e => e.sc === sc.id).forEach(e => { const p = document.createElement('p'); p.textContent = applyGL(e.text, 'display'); lb.append(p); });
+  });
+}
+function openSaves() { if (!OVERLAYS.includes(current)) returnTo = current; stopPlayback(); renderSaves(); $('saveStatus').textContent = ''; where('全部循環', '存檔與日誌'); show('saves'); }
+$('saveNew').onclick = () => {
+  const name = $('saveNameIn').value.trim() || `新存檔 ${Object.keys(SV.list).length + 1}`, id = 's' + Date.now();
+  SV.list[id] = { id, name, created: Date.now(), updated: Date.now(), progress: null, results: {}, log: [] };
+  SV.active = id; persist(); $('saveNameIn').value = ''; renderSaves(); $('saveStatus').textContent = `已建立並切換到「${name}」。`;
+};
+$('saveRename').onclick = () => {
+  const name = $('saveNameIn').value.trim(); if (!name) { $('saveStatus').textContent = '先在上面的欄位輸入新名字。'; return; }
+  save().name = name; persist(); $('saveNameIn').value = ''; renderSaves(); $('saveStatus').textContent = `已改名為「${name}」。`;
+};
+$('saveDel').onclick = () => {
+  if (Object.keys(SV.list).length <= 1) { $('saveStatus').textContent = '至少要保留一個存檔。'; return; }
+  const s = save();
+  confirmThen(`確定刪除「${s.name}」？這個存檔的進度和戰役日誌都會消失。`, 'blood', () => {
+    delete SV.list[s.id]; SV.active = Object.keys(SV.list)[0]; persist(); renderSaves(); show('saves'); $('saveStatus').textContent = `已刪除「${s.name}」。`;
+  });
+};
+$('backupOut').onclick = async () => {
+  const code = JSON.stringify({ v: 1, saves: SV, glossary: GL, settings: S });
+  $('backupBox').value = code;
+  try { await navigator.clipboard.writeText(code); $('saveStatus').textContent = '備份代碼已複製到剪貼簿，貼到記事本或傳給自己保存。'; }
+  catch (e) { $('saveStatus').textContent = '備份代碼在下方欄位，請手動複製保存。'; }
+};
+$('backupIn').onclick = () => {
+  try {
+    const j = JSON.parse($('backupBox').value);
+    if (!j.saves || !j.saves.list) throw new Error();
+    confirmThen('匯入會用備份內容取代這台裝置目前的存檔、名詞替換表和設定，確定嗎？', 'blood', () => {
+      SV.active = j.saves.active; SV.list = j.saves.list; persist();
+      if (j.glossary) { Object.assign(GL, j.glossary); saveGL(); }
+      if (j.settings) { Object.assign(S, j.settings); store.set('asr.settings', S); }
+      renderSaves(); show('saves'); $('saveStatus').textContent = '備份已匯入。';
+    });
+  } catch (e) { $('saveStatus').textContent = '備份代碼格式不對，請確認是從這個工具匯出的。'; }
+};
+$('savesDone').onclick = () => { returnTo = 'home'; toHome(); };
+$('savesBtn').onclick = openSaves;
+$('continueBtn').onclick = resume;
+
+/* ---------- top bar ---------- */
+$('autoBtn').onclick = () => { auto = !auto; $('autoBtn').setAttribute('aria-pressed', auto); $('autoBtn').textContent = auto ? '自動' : '手動'; };
+$('soundBtn').onclick = () => { if (amb) { stopAmb(); $('soundBtn').setAttribute('aria-pressed', 'false'); } else if (startAmb()) $('soundBtn').setAttribute('aria-pressed', 'true'); };
+$('homeBtn').onclick = () => { if (!CYCLES.length) return; toHome(); };
+$('textBtn').onclick = () => { if (!CYCLES.length) { toast('劇本還沒讀取完成'); return; } openLibrary(false); };
+$('glossBtn').onclick = () => { if (!CYCLES.length) { toast('劇本還沒讀取完成'); return; } openGlossary(); };
+$('gearBtn').onclick = openSettings;
+
+async function boot() {
+  where('詭鎮劇本朗讀器', '讀取劇本中'); show('home');
+  $('loadMsg').hidden = false; $('loadMsg').textContent = '正在從 GitHub 讀取卡爾克薩之路的劇本…'; $('loadBtns').hidden = true;
+  try {
+    CYCLES = normalize(await loadReal());
+    $('loadMsg').hidden = true;
+  } catch (e) {
+    $('loadMsg').textContent = `讀取失敗：${e.message}。請確認是用瀏覽器直接打開 GitHub Pages 網址（不是預覽視窗），或換個網路再試。`;
+    $('loadBtns').hidden = false; return;
+  }
+  CUR = findSc(store.get('asr.last', '')) || allScenarios()[0]; homeCycle = CUR.cycle.id;
+  toHome();
+}
+$('retryLoad').onclick = boot;
+$('useSample').onclick = () => { CYCLES = SAMPLE_CYCLES; CUR = allScenarios()[0]; homeCycle = CUR.cycle.id; $('loadMsg').hidden = true; $('loadBtns').hidden = true; toast('目前是示意劇本'); toHome(); };
+boot();
+})();
+
+</script>
+</body>
+</html>
