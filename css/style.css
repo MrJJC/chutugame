@@ -61,6 +61,8 @@ button{cursor:pointer}
 .effects p{margin:6px 0}
 /* game */
 #game{padding:8px 14px 24px;gap:14px}
+#decks{display:contents}
+#branchList .btn,#resList .btn{padding:8px 14px;letter-spacing:.08em;line-height:1.5}
 .deck{border:1px solid var(--line);background:rgba(18,15,11,.82);padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px}
 .deck.agenda{border-color:#3A2420}.deck.act{border-color:#23332D}
 .deck .head{display:flex;align-items:baseline;gap:12px}

@@ -3,13 +3,16 @@
 let CUR = null, homeCycle = null;
 function progressText(p) {
   const sc = findSc(p.scenarioId); if (!sc) return '';
-  return p.phase === 'game' ? `${sc.title} · 密謀 ${ROMAN[(sc.agenda[p.ag] || {}).stage] || ''}／場景 ${ROMAN[(sc.act[p.ac] || {}).stage] || ''}` : `${sc.title} · 開場`;
+  if (p.phase !== 'game') return `${sc.title} · 開場`;
+  return `${sc.title} · ` + sc.decks.map((d, k) => { const c = d.cards[(p.pos || [])[k]]; return c ? `${d.label} ${ROMAN[c.stage]}` : ''; }).filter(Boolean).join('／');
 }
 function resume() {
   const p = save().progress; if (!p) return;
   CUR = findSc(p.scenarioId); homeCycle = CUR.cycle.id;
-  G.ag = p.ag || 0; G.ac = p.ac || 0; G.history = (p.history || []).slice();
-  if (p.phase === 'game') toGame(); else toTitle();
+  // 舊版存檔只記 ag／ac 兩個位置
+  G.pos = p.pos ? p.pos.slice() : [p.ag || 0, p.ac || 0];
+  G.history = (p.history || []).map(h => Array.isArray(h) ? h.slice() : [h.ag, h.ac]);
+  if (p.phase === 'game' && CUR.decks.length) toGame(); else toTitle();
 }
 function renderHome() {
   const s = save();
@@ -30,7 +33,8 @@ function renderHome() {
     const b = document.createElement('button'); b.className = 'sc-row';
     const code = document.createElement('span'); code.className = 'code'; code.textContent = sc.code;
     const mid = document.createElement('span'); const st = document.createElement('strong'); st.textContent = sc.title;
-    const sm = document.createElement('small'); sm.textContent = sc.kind === 'story' ? '劇情朗讀' : `${sc.agenda.length} 張密謀 · ${sc.act.length} 張場景 · ${resIds(sc).length} 種結局`;
+    const count = kind => sc.decks.filter(d => d.kind === kind).reduce((n, d) => n + d.cards.length, 0);
+    const sm = document.createElement('small'); sm.textContent = sc.kind === 'story' ? '劇情朗讀' : `${count('agenda')} 張密謀 · ${count('act')} 張場景 · ${resIds(sc).length} 種結局`;
     mid.append(st, sm);
     const go = document.createElement('span'); go.className = 'go';
     const doing = s.progress && s.progress.scenarioId === sc.id, done = s.results[sc.id];
@@ -45,66 +49,107 @@ function renderHome() {
 function toHome() { stopPlayback(); renderHome(); where('詭鎮劇本朗讀器', '選擇關卡'); show('home'); }
 
 /* ---------- game flow ---------- */
-const G = { ag: 0, ac: 0, history: [] };
+// pos[k] = 第 k 疊目前是哪一張；-1 表示這疊不在場上
+const G = { pos: [], history: [] };
 function toTitle() {
   stopPlayback(); where(CUR.cycle.name, CUR.title);
-  $('titleSmall').textContent = CUR.kind === 'story' ? 'Prologue' : `Scenario ${CUR.code}`; $('titleBig').textContent = CUR.title;
+  $('titleSmall').textContent = CUR.tag || (CUR.kind === 'story' ? 'Interlude' : `Scenario ${CUR.code}`); $('titleBig').textContent = CUR.title;
   show('title');
 }
-function startIntro() {
-  G.ag = 0; G.ac = 0; G.history = [];
-  saveProgress('intro');
-  where(CUR.cycle.name, `${CUR.title} · 開場`);
-  if (CUR.kind === 'story') { storyFlow(); return; }
-  narrate(chunks(CUR.intro).map(t => ({ text: t, label: '開場' })), {
-    effects: CUR.setup || [], effectsTitle: '設置（照戰役手冊擺好後再繼續）',
-    label: '開始遊戲', then: () => narrate([...cardItems(CUR.agenda[0], '密謀'), ...cardItems(CUR.act[0], '場景')], { label: '進入遊戲', then: toGame })
-  });
+// 依序跑一段流程：朗讀 read、把 note 列在朗讀後的方框、遇到 ask 讓玩家選
+// 同一個問題在這段流程裡問過就沿用答案，不再問第二次
+function runFlow(nodes, o) {
+  const q = nodes.slice(), answered = {};
+  const pick = (n, op) => { answered[n.q] = op.label; q.unshift(...op.nodes); next(); };
+  const take = k => { const out = []; while (q.length && q[0].k === k) out.push(q.shift()); return out; };
+  function next() {
+    const notes = take('note'), reads = take('read'); notes.push(...take('note'));
+    if (reads.length || notes.length) {
+      const lines = notes.flatMap(n => n.text.split(/\n+/)).filter(Boolean);
+      if (o.onNotes) o.onNotes(lines);
+      narrate(reads.flatMap(r => chunks(r.text).map(t => ({ text: t, label: o.label }))), { effects: lines, effectsTitle: o.effectsTitle, label: q.length ? '繼續' : o.doneLabel, mute: o.mute, then: next });
+      return;
+    }
+    const n = q.shift();
+    if (!n) { o.then(); return; }
+    if (n.k === 'goto') { if (o.goto) o.goto(n.res); else next(); return; }
+    const prev = n.opts.find(op => op.label === answered[n.q]);
+    if (prev) { pick(n, prev); return; }
+    choose(applyGL(n.q, 'display'), n.opts.map(op => ({ label: applyGL(op.label, 'display'), fn: () => pick(n, op) })));
+  }
+  next();
 }
-function storyFlow() {
-  const sc = CUR, extras = (sc.extra || []).slice();
-  const finish = () => { saveResult(sc, 'done'); toHome(); };
-  const nextExtra = () => {
-    const o = extras.shift(); if (!o) { finish(); return; }
-    choose(o.ask, [
-      { label: '有', fn: () => narrate(chunks(o.text).map(t => ({ text: t, label: o.label })), { label: '繼續', then: nextExtra }) },
-      { label: '沒有', fn: nextExtra }
-    ]);
-  };
-  narrate(chunks(sc.intro).map(t => ({ text: t, label: sc.title })), { label: extras.length ? '繼續' : '完成，回到選擇關卡', then: nextExtra });
+function startIntro() {
+  const sc = CUR;
+  G.pos = sc.decks.map(d => { const s = deckStart(d); return s.length ? s[0][1] : -1; }); G.history = [];
+  saveProgress('intro');
+  where(sc.cycle.name, `${sc.title} · 開場`);
+  if (sc.kind === 'story') {
+    const lines = [];
+    if (sc.mute) toast('依規則這一段不念出聲，請照畫面指示由該看的人自己讀');
+    runFlow(sc.flow, { label: sc.title, effectsTitle: '照指示執行', doneLabel: '完成，回到選擇關卡', mute: sc.mute, onNotes: l => lines.push(...l), then: () => { saveResult(sc, 'done', lines); toHome(); } });
+    return;
+  }
+  runFlow(sc.flow, { label: '開場', effectsTitle: '設置（照戰役手冊擺好後再繼續）', doneLabel: '開始遊戲', then: () => pickStart(0) });
+}
+// 開局的卡有多個版本時（例如場景 1 有 v. I／v. II），先問用哪一張，再念開局的卡
+function pickStart(k) {
+  const d = CUR.decks[k];
+  if (!d) { narrate(CUR.decks.flatMap((x, i) => x.cards[G.pos[i]] ? cardItems(x.cards[G.pos[i]], x.label) : []), { label: '進入遊戲', then: toGame }); return; }
+  const cands = []; deckStart(d).forEach(([c, j]) => { if (!cands.some(([x]) => x.name === c.name)) cands.push([c, j]); });
+  if (cands.length < 2) { pickStart(k + 1); return; }
+  choose(`這場冒險用的是哪一張${d.label} ${ROMAN[cands[0][0].stage]}？照設置指示，看手上那張卡的名稱點選。`,
+    cands.map(([c, j]) => ({ label: applyGL(c.name, 'display'), fn: () => { G.pos[k] = j; pickStart(k + 1); } })));
 }
 function toGame() {
   stopPlayback(); where(CUR.cycle.name, `${CUR.title} · 進行中`);
   saveProgress('game');
-  const ag = CUR.agenda[G.ag], ac = CUR.act[G.ac];
-  $('agNum').textContent = ROMAN[ag.stage]; $('agSmall').textContent = `密謀 · ${ag.stage} / ${maxStage(CUR.agenda)}`;
-  $('agName').textContent = applyGL(ag.name, 'display'); $('agNeed').textContent = ag.need; $('agFlavor').textContent = applyGL(ag.flavor, 'display');
-  $('acNum').textContent = ROMAN[ac.stage]; $('acSmall').textContent = `場景 · ${ac.stage} / ${maxStage(CUR.act)}`;
-  $('acName').textContent = applyGL(ac.name, 'display'); $('acNeed').textContent = ac.need; $('acFlavor').textContent = applyGL(ac.flavor, 'display');
+  const box = $('decks'); box.replaceChildren();
+  CUR.decks.forEach((d, k) => {
+    const c = d.cards[G.pos[k]]; if (!c) return;
+    const cls = d.kind === 'agenda' ? 'blood' : 'verd';
+    const el = document.createElement('div'); el.className = `deck ${d.kind}`;
+    el.innerHTML = '<div class="head"><span class="num"></span><div class="meta"><small></small><strong></strong></div><span class="need"></span></div><p class="flavor"></p><div class="row"><button class="btn"></button><button class="btn solid"></button></div>';
+    const q = s => el.querySelector(s), [read, adv] = el.querySelectorAll('button');
+    q('.num').textContent = ROMAN[c.stage]; q('small').textContent = `${d.label} · ${c.stage} / ${maxStage(d.cards)}`;
+    q('strong').textContent = applyGL(c.name, 'display'); q('.need').textContent = c.need; q('.flavor').textContent = applyGL(c.flavor, 'display');
+    read.classList.add(cls); read.textContent = '重念';
+    read.onclick = () => { ensureCtx(); narrate(cardItems(c, d.label), { label: '回到遊戲', then: toGame }); };
+    adv.classList.add(cls); adv.textContent = `${d.label}推進`;
+    adv.onclick = () => confirmThen(`確定推進${d.label}？翻過去就會看到下一張的內容。`, cls, () => advance(k));
+    box.append(el);
+  });
   show('game');
 }
 const maxStage = list => Math.max(...list.map(c => c.stage));
-const nextCandidates = (list, c) => list.map((x, j) => [x, j]).filter(([x]) => x.stage === c.stage + 1);
-function advance(kind) {
-  const isAg = kind === 'agenda', list = isAg ? CUR.agenda : CUR.act, word = isAg ? '密謀' : '場景';
-  const idx0 = isAg ? G.ag : G.ac, c0 = list[idx0];
-  const setIdx = j => { G.history.push({ ag: G.ag, ac: G.ac }); if (isAg) G.ag = j; else G.ac = j; };
+function advance(k) {
+  const d = CUR.decks[k], list = d.cards, idx0 = G.pos[k], c0 = list[idx0];
   // 同一張正面、背面不同的版本（例如謝幕的場景 2）：翻開後選背面
   const variants = list.map((x, j) => [x, j]).filter(([x]) => x.stage === c0.stage && x.name === c0.name);
   if (variants.length > 1) {
-    choose(`翻開${word} ${ROMAN[c0.stage]}「${applyGL(c0.name, 'display')}」，背面的標題是哪一個？`,
-      variants.map(([x, j]) => ({ label: applyGL(x.backName || x.name, 'display'), fn: () => { if (j !== idx0) { if (isAg) G.ag = j; else G.ac = j; } flipBack(isAg, list, word, j, setIdx); } })));
+    choose(`翻開${d.label} ${ROMAN[c0.stage]}「${applyGL(c0.name, 'display')}」，背面的標題是哪一個？`,
+      variants.map(([x, j]) => ({ label: applyGL(x.backName || x.name, 'display'), fn: () => { G.pos[k] = j; flipBack(k, j); } })));
     return;
   }
-  flipBack(isAg, list, word, idx0, setIdx);
+  flipBack(k, idx0);
 }
-function flipBack(isAg, list, word, idx, setIdx) {
-  const c = list[idx];
+function flipBack(k, idx) {
+  const d = CUR.decks[k], list = d.cards, word = d.label, c = list[idx];
+  const snap = () => G.history.push(G.pos.slice());
+  const setIdx = j => { snap(); G.pos[k] = j; };
   const effects = c.backText.split(/\n+/).filter(Boolean), effectsTitle = `${word} ${ROMAN[c.stage]} 背面：照卡面執行`;
   if (c.res.length) {
-    G.history.push({ ag: G.ag, ac: G.ac });
+    snap();
     const go = () => c.res.length === 1 ? resolution(c.res[0]) : choose('依卡背的決定，進入哪一個結局？', c.res.map(id => ({ label: resLabel(id), fn: () => resolution(id) })));
     narrate(cardItems(c, word, true), { effects, effectsTitle, label: c.res.length === 1 ? `進入${resLabel(c.res[0])}` : '選擇結局', then: go });
+    return;
+  }
+  // 卡背指示「移除這疊，換成另一張卡」（黑星升起的密謀 2 → 場景 3）
+  const swapTo = CUR.swap && CUR.swap[c.code];
+  if (swapTo) {
+    const k2 = CUR.decks.findIndex(x => x.cards.some(y => y.code === swapTo)), d2 = CUR.decks[k2], j2 = d2.cards.findIndex(y => y.code === swapTo);
+    snap(); G.pos[k] = -1; G.pos[k2] = j2;
+    narrate([...cardItems(c, word, true), ...cardItems(d2.cards[j2], d2.label)], { effects, effectsTitle, label: '回到遊戲', then: toGame });
     return;
   }
   // 下一階段依正面名稱分組；同名的多個版本先當成同一張
@@ -115,7 +160,7 @@ function flipBack(isAg, list, word, idx, setIdx) {
       then: () => pickBranch(word, c, groups.map(g => [list[g.j], g.j]), j => { setIdx(j); narrate(cardItems(list[j], word), { label: '回到遊戲', then: toGame }); }) });
     return;
   }
-  if (groups[0]) setIdx(groups[0].j); else G.history.push({ ag: G.ag, ac: G.ac });
+  if (groups[0]) setIdx(groups[0].j); else snap();
   narrate([...cardItems(c, word, true), ...(groups[0] ? cardItems(list[groups[0].j], word) : [])], { effects, effectsTitle, label: groups[0] ? '回到遊戲' : '回到遊戲（這疊已經到底）', then: toGame });
 }
 function choose(text, options) {
@@ -135,21 +180,20 @@ function pickBranch(word, from, cands, done) {
   });
   toGame(); $('branchPick').showModal();
 }
-function resolution(id) {
-  const r = CUR.resolutions[id];
-  saveResult(CUR, id);
-  where(CUR.cycle.name, `${CUR.title} · ${resLabel(id)}`);
-  narrate(chunks(r.text).map(t => ({ text: t, label: resLabel(id) })), { effects: r.log, effectsTitle: '本關結算', label: '回到選擇關卡', then: toHome });
+// lines：這一關到目前為止要記進戰役日誌的指示（結局之間互相轉接時會一路帶著）
+function resolution(id, lines = []) {
+  const sc = CUR, r = sc.resolutions[id];
+  saveResult(sc, id, lines);
+  where(sc.cycle.name, `${sc.title} · ${resLabel(id)}`);
+  runFlow(r.flow, { label: resLabel(id), effectsTitle: '本關結算', doneLabel: '回到選擇關卡', then: toHome,
+    onNotes: l => { lines.push(...l); saveResult(sc, id, lines); },
+    goto: to => { if (sc.resolutions[to]) resolution(to, lines); else toHome(); } });
 }
 let pendingAction = null;
 function confirmThen(text, cls, fn) { pendingAction = fn; $('confirmText').textContent = text; $('cYes').className = 'btn solid ' + cls; $('confirm').showModal(); }
 $('cNo').onclick = () => { pendingAction = null; $('confirm').close(); };
 $('cYes').onclick = () => { $('confirm').close(); const f = pendingAction; pendingAction = null; if (f) f(); };
-$('agAdv').onclick = () => confirmThen('確定推進密謀？翻過去就會看到下一張的內容。', 'blood', () => advance('agenda'));
-$('acAdv').onclick = () => confirmThen('確定推進場景？翻過去就會看到下一張的內容。', 'verd', () => advance('act'));
-$('agRead').onclick = () => { ensureCtx(); narrate(cardItems(CUR.agenda[G.ag], '密謀'), { label: '回到遊戲', then: toGame }); };
-$('acRead').onclick = () => { ensureCtx(); narrate(cardItems(CUR.act[G.ac], '場景'), { label: '回到遊戲', then: toGame }); };
-$('undoBtn').onclick = () => { const h = G.history.pop(); if (!h) { toast('已經是第一張了'); return; } G.ag = h.ag; G.ac = h.ac; toGame(); };
+$('undoBtn').onclick = () => { const h = G.history.pop(); if (!h) { toast('已經是第一張了'); return; } G.pos = h; toGame(); };
 $('resBtn').onclick = () => {
   const list = $('resList'); list.replaceChildren();
   resIds(CUR).forEach(id => {

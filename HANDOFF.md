@@ -15,10 +15,12 @@
 
 | 功能 | 狀態 |
 | --- | --- |
-| 讀取真實資料：序章、冒險 I《謝幕》 | 完成，打開時從 GitHub 讀取（失敗改 jsDelivr） |
+| 讀取真實資料：卡爾克薩之路完整循環（序章、I–VIII、幕間 I／II、尾聲） | 完成，打開時從 GitHub 讀取（失敗改 jsDelivr） |
+| 戰役指南流程：朗讀、設置／結算指示、玩家選擇、依冒險日誌分支 | 完成（不追蹤日誌：有劇情的分支問玩家，只有指示的分支全列並標條件） |
+| 多疊牌（黑星升起雙密謀＋密謀換成場景）、開局卡版本選擇、背面是另一張卡 | 完成 |
 | 選擇關卡畫面（依循環分頁、顯示進行中／已完成） | 完成 |
 | 朗讀：整段顯示、念到哪句亮哪句（預設）；另有整段顯示、逐字打字 | 完成 |
-| 語音：Gemini（OpenRouter）＋裝置語音備援（Apple 美佳優先） | 完成；Gemini 未實測 |
+| 語音：Gemini（OpenRouter）＋裝置語音備援（Apple 美佳優先） | 完成；2026-10-08 用真金鑰打 API 驗證請求格式可用（pcm、instructions），瀏覽器內實際聽感未驗 |
 | 遊戲畫面：密謀／場景各一疊、推進前確認、回上一張 | 完成 |
 | 分支場景卡（同階段不同正面）→「翻到的是哪一張」 | 完成 |
 | 同正面不同背面（謝幕的場景 2 有三版）→ 選背面標題 | 完成 |
@@ -49,32 +51,41 @@
 
 ## 4. 新增關卡的方式
 
-`js/config.js` 裡的 `REAL` 設定：
+`js/config.js` 裡的 `REAL` 加一行（特殊欄位 `sets`／`decks`／`swap`／`mute` 的說明在該檔註解）：
 
 ```js
-const REAL = [
-  { id: 'ptc', name: '卡爾克薩之路', folder: 'ptc', extraPo: ['campaign', 'core'], scenarios: [
-    { id: 'prologue', code: '序', title: '序章', kind: 'story', optional: [...] },
-    { id: 'curtain_call', code: 'I', pack: 'ptc' }
-    // { id: 'the_last_king', code: 'II', pack: 'eotp' }, ...
-  ] }
-];
+{ id: 'the_last_king', code: 'II', pack: 'ptc' }        // 一般冒險
+{ id: 'lost_soul', code: '幕II', kind: 'story' }         // 只有朗讀的關卡
 ```
 
 讀取程式 `loadReal()`（`js/loader.js`）會把每關轉成統一格式，所有畫面只讀這個格式：
 
 ```
-{ id, code, title, kind: 'play'|'story', intro, setup[], extra[],
-  agenda:[卡], act:[卡], resolutions:{ R1:{text, log[]}, no_resolution:{...} }, names[] }
+{ id, code, title, kind: 'play'|'story', tag, mute,
+  flow: [節點],                       // 開場＋設置
+  decks: [{ kind:'agenda'|'act', label, cards:[卡] }],
+  swap: { 卡號: 換上的卡號 },
+  resolutions: { R1: { flow:[節點] }, no_resolution: {...} }, names[] }
+節點：{ k:'read', text } 朗讀｜{ k:'note', text } 指示｜{ k:'ask', q, opts:[{label, nodes}] } 提問｜{ k:'goto', res } 轉到別的結局
 卡：{ code, stage, name, backName, flavor, backFlavor, backText, need, res:[] }
 ```
+
+節點由 `guideWalker()` 從劇本檔的步驟圖走出來；`runFlow()`（`js/game.js`）負責執行。存檔的進度格式是 `{ scenarioId, phase, pos:[各疊位置], history }`（舊版 `ag`／`ac` 會自動轉換）。
+
+已知的資料特性：
+- 翻譯檔的原句與劇本檔偶有 Unicode 寫法差異（é 等），查表前一律 NFC 正規化。
+- 通用句子（經驗值結算、「不進行變動」等）卡爾克薩的翻譯檔沒有，從 `commonPo` 列的別循環翻譯檔補。
+- 仍無翻譯的兩句設置指示寫在 `FALLBACK_TR`（自行翻譯，非官方用字）。
+- App 內部記帳用的隱藏旗標分支（`hidden` 區，`reprint_language`／`possessed` 除外）整段略過。
+- 資料用語是「冒險日誌」「混亂袋」，程式自己產生的句子跟著用。
 
 ## 5. 待辦（依優先順序）
 
 1. ~~拆成正式專案結構（設定、讀取、播放、畫面分檔），加 README，部署 GitHub Pages。~~ 完成（2026-10-08）：repo <https://github.com/MrJJC/chutugame>，網站 <https://mrjjc.github.io/chutugame/>，push 到 `main` 即自動更新。
-2. 實測 Gemini 語音：台灣口音、語氣指示會不會被念出、`response_format` 是否回 mp3（已寫 PCM→WAV 備援，假設 24kHz）。
-3. 補完冒險 II–VIII、幕間故事 I（癲狂獎勵／現實之影二選一）、幕間故事 II、尾聲。
-4. 第 VII 關「黑星升起」：兩疊密謀同時進行，遊戲畫面需支援多疊。
+2. Gemini 語音：請求格式已修正並驗證（只支援 pcm；語氣走 `instructions`；取樣率讀 Content-Type）。尚待使用者實際聽：台灣口音、語氣是否合適。
+3. ~~補完冒險 II–VIII、幕間故事 I、幕間故事 II、尾聲。~~ 完成（2026-10-08）。自動試玩過每關兩輪無錯誤；尚未有人實際對照實體卡玩過 II–VIII。
+4. ~~第 VII 關「黑星升起」：兩疊密謀同時進行，遊戲畫面需支援多疊。~~ 完成（2026-10-08）。
+   - 待改進：部分卡背的劇情寫在 `back_text`（混著條件句，例如蒼白面具場景 2、真相幻影場景 1），目前顯示在「照卡面執行」方框、不會朗讀。
 5. 戰役日誌的「懷疑」「信念」等累計數值：先做手動加減。
 6. 逐句覆寫校對層（目前只有名詞替換）。
 7. 待使用者確認：替換表是否依循環分開、卡背效果要不要朗讀、是否需要雲端存檔。

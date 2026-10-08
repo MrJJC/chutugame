@@ -16,9 +16,13 @@ function stopPlayback() {
 }
 function narrate(list, after) {
   stopPlayback();
-  P.list = list.filter(x => x.text); P.after = after;
+  P.list = list.filter(x => x.text); P.after = after; P.mute = !!(after && after.mute);
   show('story'); $('after').classList.remove('on');
-  if (!P.list.length) { finishAll(); return; }
+  if (!P.list.length) {
+    // 這一段只有指示、沒有要念的字：清掉上一段留在畫面上的文字
+    ['storyLabel', 'storyCount', 'rest', 'under'].forEach(id => { $(id).textContent = ''; }); $('shown').replaceChildren();
+    finishAll(); return;
+  }
   playPassage(0);
 }
 function splitSent(t) { return (t.match(/[^。！？]+[。！？]*[」』”）]*/g) || [t]).filter(s => s.trim()); }
@@ -37,7 +41,7 @@ function playPassage(i) {
   const els = disp.map(t => { const s = document.createElement('span'); s.className = 'sent todo'; s.textContent = t; box.append(s); return s; });
   P.sentEls = els;
   const mark = k => els.forEach((e, j) => { e.className = 'sent ' + (j < k ? 'done' : j === k ? 'now' : 'todo'); });
-  const v = (S.engine === 'browser' || S.engine === 'openrouter') && window.speechSynthesis ? pickVoice() : null;
+  const v = !P.mute && (S.engine === 'browser' || S.engine === 'openrouter') && window.speechSynthesis ? pickVoice() : null;
   const deviceOnly = (text, cb) => {
     if (!v) { const t = setTimeout(cb, Math.max(1200, text.length * 140)); P.stopFns.push(() => clearTimeout(t)); return; }
     const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch;
@@ -46,7 +50,7 @@ function playPassage(i) {
     speechSynthesis.speak(u);
   };
   const speakOne = (text, cb, k) => {
-    if (S.engine !== 'openrouter' || !S.key) { deviceOnly(text, cb); return; }
+    if (P.mute || S.engine !== 'openrouter' || !S.key) { deviceOnly(text, cb); return; }
     synth(text).then(url => {
       if (run !== P.run) return;
       const a = new Audio(url); let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
@@ -88,7 +92,7 @@ function playTyped(i) {
     let raf = requestAnimationFrame(function step(now) { const f = (now - t0) / dur; progress(f); if (f >= 1) end(); else raf = requestAnimationFrame(step); });
     P.stopFns.push(() => cancelAnimationFrame(raf));
   };
-  const v = S.engine === 'browser' ? pickVoice() : null;
+  const v = !P.mute && S.engine === 'browser' ? pickVoice() : null;
   if (!v || !window.speechSynthesis) { timed(0.11); return; }
   const u = new SpeechSynthesisUtterance(speech); u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch;
   const est = total * 0.13 / S.rate * 1000, t0 = performance.now(); let raf;

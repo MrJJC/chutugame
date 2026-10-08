@@ -2,7 +2,7 @@
 
 搭配實體《詭鎮奇談：卡牌版》繁中版遊玩的網頁小工具。手機或平板放在桌邊，選關後替你朗讀開場、密謀／場景卡背與結局，並記下戰役日誌。
 
-目前收錄：**卡爾克薩之路**的序章與冒險 I《謝幕》。
+目前收錄：**卡爾克薩之路**完整循環——序章、冒險 I–VIII、幕間故事 I／II、尾聲。
 
 ## 使用
 
@@ -18,14 +18,14 @@
 ```
 index.html      頁面骨架（所有畫面的 HTML）
 css/style.css   樣式
-js/config.js    設定：共用小工具、要讀哪些循環與關卡（REAL）、資料來源網址
+js/config.js    設定：共用小工具、要讀哪些循環與關卡（REAL）、補譯（FALLBACK_TR）、資料來源網址
 js/sample.js    示意劇本（原創文字，讀取失敗時用來試介面）
-js/loader.js    讀取：抓社群資料、解析 .po 翻譯、轉成統一的關卡格式
+js/loader.js    讀取：抓社群資料、解析 .po 翻譯、把戰役指南走成流程、轉成統一的關卡格式
 js/state.js     狀態：朗讀設定、存檔、名詞替換（localStorage）
 js/ui.js        切換畫面、標題列、提示訊息
 js/audio.js     聲音：裝置語音、Gemini（OpenRouter）、背景音
 js/player.js    播放：逐句／逐字朗讀與畫面同步
-js/game.js      畫面：選擇關卡、遊戲流程（推進、分支、結局）
+js/game.js      畫面：選擇關卡、流程執行（朗讀／指示／提問）、牌疊推進、分支、結局
 js/panels.js    畫面：文本庫、名詞替換、朗讀設定、存檔與日誌
 js/main.js      頂端按鈕與啟動
 ```
@@ -47,10 +47,14 @@ python -m http.server 8000
 在 `js/config.js` 的 `REAL` 加一行，例如：
 
 ```js
-{ id: 'the_last_king', code: 'II', pack: 'eotp' }
+{ id: 'echoes_of_the_past', code: 'III', pack: 'eotp' }
 ```
 
-`id` 是 arkham-cards-data 的劇本檔名，`pack` 是卡牌所在的 ArkhamDB 資料包。細節與待辦見 [HANDOFF.md](HANDOFF.md)。
+`id` 是 arkham-cards-data 的劇本檔名，`pack` 是卡牌所在的 ArkhamDB 資料包。只有朗讀的關卡（幕間故事等）加 `kind: 'story'`。多疊密謀、卡牌分屬多個遭遇組等特殊情況的欄位，說明寫在 `REAL` 上方的註解。細節與待辦見 [HANDOFF.md](HANDOFF.md)。
+
+## 關於分支
+
+本工具不追蹤戰役日誌。劇本裡「依日誌決定走哪一段」的地方：那一段有劇情要念，就跳出問題讓玩家照紙本日誌回答；只有設置指示，就全部列出並在前面標明條件（例如「【若冒險日誌記有「…」】」）。
 
 ## 部署
 

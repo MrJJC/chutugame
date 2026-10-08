@@ -11,14 +11,14 @@ const SV = store.get('asr.saves', null) || (() => {
 const persist = () => { const s = SV.list[SV.active]; if (s) s.updated = Date.now(); store.set('asr.saves', SV); };
 const save = () => SV.list[SV.active] || Object.values(SV.list)[0];
 function saveProgress(phase) {
-  save().progress = { scenarioId: CUR.id, phase, ag: G.ag, ac: G.ac, history: G.history.slice() };
+  save().progress = { scenarioId: CUR.id, phase, pos: G.pos.slice(), history: G.history.map(h => h.slice()) };
   persist();
 }
-function saveResult(sc, resId) {
+function saveResult(sc, resId, lines) {
   const s = save();
   s.results[sc.id] = { res: resId, at: Date.now() };
   s.log = s.log.filter(e => e.sc !== sc.id);
-  ((sc.resolutions[resId] || {}).log || []).forEach(text => s.log.push({ sc: sc.id, text }));
+  (lines || []).forEach(text => s.log.push({ sc: sc.id, text }));
   if (s.progress && s.progress.scenarioId === sc.id) s.progress = null;
   persist();
 }
