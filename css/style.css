@@ -297,7 +297,8 @@ dialog .acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
   dialog{max-width:620px;inset:auto 0 24px 0;border-radius:20px;border:2px solid var(--brass)}
   #scList{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
   #decks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start}
-  .doc>*,.lib>*,.doc>h2,.lib>h2{width:100%;max-width:620px;margin-left:auto;margin-right:auto}
+  /* 表單型的畫面整塊收窄置中（不要逐個元素置中：說明文字自己有 margin 設定，會對不齊） */
+  .screen.doc,.screen.lib{width:100%;max-width:656px;margin-left:auto;margin-right:auto}
   .passage{max-width:28em}
   .after .btn,.effects{max-width:30em}
 }
