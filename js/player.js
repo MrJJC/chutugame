@@ -36,6 +36,8 @@ function narrate(list, after) {
   playPassage(0);
 }
 function splitSent(t) { return (t.match(/[^。！？]+[。！？]*[」』”）]*/g) || [t]).filter(s => s.trim()); }
+// 一段文字實際送去念的內容（套過名詞替換的讀音）
+const speechOf = item => (S.reveal === 'full' ? [item.text] : splitSent(item.text)).map(t => applyGL(t, 'speech')).join('');
 function playPassage(i) {
   if ((S.reveal || 'sentence') === 'type') { playTyped(i); return; }
   stopPlayback();
@@ -59,37 +61,45 @@ function playPassage(i) {
     u.onend = once; u.onerror = () => { const t = setTimeout(once, 400); P.stopFns.push(() => clearTimeout(t)); };
     speechSynthesis.speak(u);
   };
-  const speakOne = (text, cb, k) => {
-    if (P.mute || S.engine !== 'openrouter' || !S.key) { deviceOnly(text, cb); return; }
-    // 線上語音要等幾秒才回來：等的時候標題前轉圈。一段朗讀的第一句如果讓人等過，
-    // 好了就換成播放鍵等玩家點（手機上不經點擊也常常不准出聲）；有存檔、馬上就好的直接播
-    const first = !P.started, t0 = performance.now(); P.started = true;
-    const wait = setTimeout(() => { if (run === P.run) setVico('load'); }, 250);
-    P.stopFns.push(() => clearTimeout(wait));
-    synth(text).then(url => {
-      clearTimeout(wait);
-      if (run !== P.run) return;
-      const a = new Audio(url); let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
-      P.stopFns.push(() => a.pause());
-      a.onended = once; a.onerror = () => deviceOnly(text, once);
-      const start = () => { P.pendingPlay = null; setVico('on'); a.play().catch(() => deviceOnly(text, once)); };
-      if (first && performance.now() - t0 > 400) { setVico('play'); P.pendingPlay = start; } else start();
-      if (sp[k + 1]) synth(sp[k + 1]).catch(() => {});
-      else if (P.list[P.i + 1]) splitSent(applyGL(P.list[P.i + 1].text, 'speech')).slice(0, 1).forEach(t => synth(t).catch(() => {}));
-    }).catch(err => {
-      clearTimeout(wait); setVico('');
-      if (run !== P.run) return;
-      if (!P.warned) { P.warned = true; toast(`線上語音失敗：${err.message}。先改用裝置語音。`); }
-      deviceOnly(text, cb);
-    });
-  };
+  // 裝置語音：一句一句念，念到哪句亮哪句
   const step = k => {
     if (run !== P.run) return;
     if (k >= els.length) { setVico(''); P.done = true; els.forEach(e => e.className = 'sent now'); onPassageEnd(run); return; }
     mark(k);
-    speakOne(sp[k], () => { if (run === P.run) step(k + 1); }, k);
+    deviceOnly(sp[k], () => { if (run === P.run) step(k + 1); });
   };
-  step(0);
+  if (P.mute || S.engine !== 'openrouter' || !S.key) { step(0); return; }
+  // 線上語音：整段一次產生。一句一句分開要的話，每次回來的音高和語氣都不一樣，聽起來像換了人。
+  // 亮哪一句改用播放進度估：每句依字數和標點算出佔整段的比例
+  const whole = sp.join(''), first = !P.started, t0 = performance.now(); P.started = true;
+  const ends = []; sp.reduce((sum, t) => { const w = weights(t); sum += w[w.length - 1] || 1; ends.push(sum); return sum; }, 0);
+  mark(0);
+  // 要等幾秒才回來：等的時候轉圈。一段朗讀的開頭如果讓人等過，好了就換成播放鍵等玩家點
+  // （手機上不經點擊也常常不准出聲）；有存檔、馬上就好的直接播
+  const wait = setTimeout(() => { if (run === P.run) setVico('load'); }, 250);
+  P.stopFns.push(() => clearTimeout(wait));
+  synth(whole).then(url => {
+    clearTimeout(wait);
+    if (run !== P.run) return;
+    const a = new Audio(url); let fired = false;
+    const end = () => { if (!fired) { fired = true; if (run === P.run) step(els.length); } };
+    const device = () => { if (!fired) deviceOnly(whole, end); };
+    P.stopFns.push(() => a.pause());
+    a.ontimeupdate = () => {
+      if (run !== P.run || fired || !a.duration) return;
+      const at = a.currentTime / a.duration * ends[ends.length - 1], k = ends.findIndex(e => at < e);
+      mark(k < 0 ? els.length - 1 : k);
+    };
+    a.onended = end; a.onerror = device;
+    const start = () => { P.pendingPlay = null; setVico('on'); a.play().catch(device); };
+    if (first && performance.now() - t0 > 400) { setVico('play'); P.pendingPlay = start; } else start();
+    if (P.list[P.i + 1]) synth(speechOf(P.list[P.i + 1])).catch(() => {});   // 趁這段在念，先產生下一段
+  }).catch(err => {
+    clearTimeout(wait); setVico('');
+    if (run !== P.run) return;
+    if (!P.warned) { P.warned = true; toast(`線上語音失敗：${err.message}。先改用裝置語音。`); }
+    step(0);
+  });
 }
 function playTyped(i) {
   P.mode = 'type';
