@@ -141,13 +141,19 @@ h2{font-family:var(--display);font-weight:700}
 #story .under{align-self:start}
 .story-label{font-size:14px;color:var(--muted);letter-spacing:.12em;min-height:1.4em;display:flex;flex-direction:column;align-items:center;gap:12px}
 /* 標題下方的語音狀態：load 產生中（轉圈）、play 好了等你點（圓圈播放鍵）、on 播放中。沒用到時留著位置，文字才不會跳動 */
-.vico{flex:none;position:relative;width:44px;height:44px;border:2px solid var(--line);border-radius:50%;color:var(--muted)}
+.vico{flex:none;position:relative;width:44px;height:44px;padding:0;background:transparent;border:2px solid var(--line);border-radius:50%;color:var(--muted)}
 .vico[hidden]{display:block;visibility:hidden}
 .vico::before{content:"";position:absolute;inset:0;margin:auto;width:13px;height:15px;background:currentColor;clip-path:polygon(0 0,100% 50%,0 100%);transform:translateX(2px)}
 .vico.load{border-top-color:var(--brass-hi);animation:spin .9s linear infinite}
 .vico.load::before{display:none}
 .vico.play{border-color:var(--brass-hi);color:var(--brass-hi);animation:blink 1.4s ease-in-out infinite}
-.story-label.ready #storyLabel{color:var(--brass-hi)}
+/* 播放中：圓圈裡是暫停的兩條槓；暫停時：黃色播放鍵（不閃） */
+.vico.on{border-color:var(--muted);color:var(--ink)}
+.vico.on::before,.vico.on::after{content:"";position:absolute;top:0;bottom:0;right:auto;margin:auto 0;width:4px;height:14px;background:currentColor;border-radius:1px;clip-path:none;transform:none}
+.vico.on::before{left:calc(50% - 6px)}
+.vico.on::after{left:calc(50% + 2px)}
+.vico.paused{border-color:var(--brass-hi);color:var(--brass-hi)}
+.story-label.ready #storyLabel,.story-label.held #storyLabel{color:var(--brass-hi)}
 .passage{margin:0;max-width:24em;font-size:clamp(19px,5.2vw,24px);line-height:2;letter-spacing:.06em;text-shadow:0 1px 12px rgba(4,6,5,.9)}
 .passage .rest{color:transparent}
 .sent{transition:opacity .45s ease,color .45s ease}

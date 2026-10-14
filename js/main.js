@@ -12,6 +12,9 @@ $('soundBtn').onclick = () => {
   S.ambOn = !ambWanted(); store.set('asr.settings', S); $('soundBtn').setAttribute('aria-pressed', S.ambOn);
   if (S.ambOn) startAmb(); else stopAmb();
 };
+// 點語音圖示是播放／暫停；點文字其他地方還是「跳過這一段」，所以不讓點擊往外傳
+$('vico').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
+$('vico').addEventListener('keydown', e => e.stopPropagation());
 $('homeBtn').onclick = () => { if (!CYCLES.length) return; toHome(); };
 $('tabHome').onclick = () => { if (CYCLES.length) toHome(); else show('home'); };
 $('textBtn').onclick = () => { if (!CYCLES.length) { toast('劇本還沒讀取完成'); return; } openLibrary(false); };

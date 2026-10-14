@@ -10,16 +10,24 @@ function render(n) {
   if (n === P.revealed) return;
   P.revealed = n; $('shown').textContent = t.slice(0, n); $('rest').textContent = t.slice(n);
 }
-const HINT_WAIT = '語音產生中…', HINT_TAP = '語音好了，點一下播放';
-// 標題前的語音圖示：'load' 產生中、'play' 好了等玩家點、'on' 播放中、'' 不顯示
+const HINTS = { load: '語音產生中…', play: '語音好了，點一下播放', paused: '已暫停，點播放鍵繼續' };
+// 標題下的語音圖示：'load' 產生中、'play' 好了等玩家點、'on' 播放中（暫停鍵）、'paused' 已暫停、'' 不顯示
 function setVico(state) {
   const v = $('vico'), u = $('under'); v.hidden = !state; v.className = 'vico ' + state;
-  v.parentNode.classList.toggle('ready', state === 'play');
-  if (state === 'load' || state === 'play') { u.textContent = state === 'load' ? HINT_WAIT : HINT_TAP; u.classList.add('caret'); }
-  else if (u.textContent === HINT_WAIT || u.textContent === HINT_TAP) { u.textContent = ''; u.classList.remove('caret'); }
+  v.setAttribute('aria-label', state === 'on' ? '暫停' : '播放');
+  v.parentNode.classList.toggle('ready', state === 'play'); v.parentNode.classList.toggle('held', state === 'paused');
+  if (HINTS[state]) { u.textContent = HINTS[state]; u.classList.add('caret'); }
+  else if (Object.values(HINTS).includes(u.textContent)) { u.textContent = ''; u.classList.remove('caret'); }
+}
+// 目前正在出聲的那個東西怎麼暫停／繼續；沒有在念就是 null
+function setPausable(pause, resume) { P.pausable = { pause, resume }; P.paused = false; setVico('on'); }
+function togglePause() {
+  if (P.pendingPlay) { P.pendingPlay(); return; }
+  const c = P.pausable; if (!c) return;
+  if (P.paused) { P.paused = false; c.resume(); setVico('on'); } else { P.paused = true; c.pause(); setVico('paused'); }
 }
 function stopPlayback() {
-  P.pendingPlay = null; setVico('');
+  P.pendingPlay = null; P.pausable = null; P.paused = false; setVico('');
   P.run++; P.stopFns.forEach(f => { try { f(); } catch (e) {} }); P.stopFns = [];
   if (window.speechSynthesis) speechSynthesis.cancel();
 }
@@ -58,8 +66,9 @@ function playPassage(i) {
     if (!v) { const t = setTimeout(cb, Math.max(1200, text.length * 140)); P.stopFns.push(() => clearTimeout(t)); return; }
     const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = S.rate; u.pitch = S.pitch;
     let fired = false; const once = () => { if (!fired) { fired = true; cb(); } };
-    u.onend = once; u.onerror = () => { const t = setTimeout(once, 400); P.stopFns.push(() => clearTimeout(t)); };
+    u.onend = once; u.onerror = () => { if (P.paused) return; const t = setTimeout(once, 400); P.stopFns.push(() => clearTimeout(t)); };
     speechSynthesis.speak(u);
+    setPausable(() => speechSynthesis.pause(), () => speechSynthesis.resume());
   };
   // 裝置語音：一句一句念，念到哪句亮哪句
   const step = k => {
@@ -91,7 +100,7 @@ function playPassage(i) {
       mark(k < 0 ? els.length - 1 : k);
     };
     a.onended = end; a.onerror = device;
-    const start = () => { P.pendingPlay = null; setVico('on'); a.play().catch(device); };
+    const start = () => { P.pendingPlay = null; setPausable(() => a.pause(), () => a.play().catch(device)); a.play().catch(device); };
     if (first && performance.now() - t0 > 400) { setVico('play'); P.pendingPlay = start; } else start();
     if (P.list[P.i + 1]) synth(speechOf(P.list[P.i + 1])).catch(() => {});   // 趁這段在念，先產生下一段
   }).catch(err => {
