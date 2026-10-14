@@ -35,6 +35,7 @@ function enter() {
   applyOverrides();
   CUR = findSc(store.get('asr.last', '')) || allScenarios()[0]; homeCycle = CUR.cycle.id;
   toHome();
+  takeTransfer();
 }
 async function boot() {
   where('詭鎮劇本朗讀器', '選擇關卡'); show('home'); renderHome();

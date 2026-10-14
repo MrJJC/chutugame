@@ -289,6 +289,11 @@ dialog .acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
 [aria-pressed="true"]>.switch{background:var(--brass-hi)}
 [aria-pressed="true"]>.switch::after{transform:translateX(20px);background:#1B1509}
 #playMenu .acts{margin-top:18px}
+/* QR Code 一定要白底黑點，深色主題反過來很多相機掃不到 */
+.qr{display:grid;place-items:center;width:min(72vw,300px);aspect-ratio:1;margin:0 auto 14px;padding:12px;background:#fff;border-radius:var(--r)}
+.qr svg{width:100%;height:100%}
+.qr.wait{background:var(--raise2);color:var(--muted);font-size:14px}
+#qrNote{min-height:1.5em;margin-bottom:14px;text-align:center}
 #branchList,#resList{display:grid;gap:10px}
 #resList{margin-bottom:14px}
 #branchList .btn,#resList .btn{padding:12px 16px;letter-spacing:.03em;line-height:1.55;text-align:left}

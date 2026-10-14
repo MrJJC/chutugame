@@ -395,5 +395,70 @@ $('backupIn').onclick = () => {
   } catch (e) { $('saveStatus').textContent = '備份代碼格式不對，請確認是從這個工具匯出的。'; }
 };
 $('savesDone').onclick = () => { returnTo = 'home'; toHome(); };
+
+/* ---------- 用 QR Code 換裝置 ----------
+   QR Code 裡是一個網址，# 後面夾帶壓縮過的目前存檔（進度、完成紀錄、日誌）和名詞替換表。
+   金鑰、校對修改、語音存檔都不放：金鑰太敏感，後兩者太大，換裝置請用備份代碼。
+   一個 QR Code 最多裝得下約 2,900 個字元，太長就依序拿掉名詞替換表、日誌。 */
+const QR_LIB = { src: 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js', sri: 'sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1' };
+const QR_MAX = 2900;
+let qrLib = null;
+const loadQrLib = () => qrLib || (qrLib = new Promise((res, rej) => {
+  const el = document.createElement('script'); el.src = QR_LIB.src; el.integrity = QR_LIB.sri; el.crossOrigin = 'anonymous';
+  el.onload = () => res(window.qrcode); el.onerror = () => { qrLib = null; rej(new Error('QR Code 程式載入失敗，請確認有連網')); };
+  document.head.append(el);
+}));
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64url = t => Uint8Array.from(atob(t.replace(/-/g, '+').replace(/_/g, '/')), ch => ch.charCodeAt(0));
+const pipe = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+// 有壓縮就壓（z 開頭），舊瀏覽器沒有就直接放（j 開頭）
+async function packTransfer(data) {
+  const raw = new TextEncoder().encode(JSON.stringify(data));
+  return window.CompressionStream ? 'z' + b64url(await pipe(raw, new CompressionStream('deflate-raw'))) : 'j' + b64url(raw);
+}
+async function unpackTransfer(t) {
+  const bytes = unb64url(t.slice(1));
+  return JSON.parse(new TextDecoder().decode(t[0] === 'z' ? await pipe(bytes, new DecompressionStream('deflate-raw')) : bytes));
+}
+const transferUrl = payload => location.origin + location.pathname + '#take=' + payload;
+// 日誌每一行都是某關劇本裡的一句指示，兩台裝置的劇本一樣，所以只傳「第幾句」，對不到的才傳原文
+const scLines = id => { const sc = findSc(id); return sc ? [...new Set([sc.flow, ...Object.values(sc.resolutions).map(r => r.flow)].flatMap(flowTexts).flatMap(t => t.split(/\n+/)).filter(Boolean))] : []; };
+const packLog = log => log.map(e => { const i = scLines(e.sc).indexOf(e.text); return [e.sc, i >= 0 ? i : e.text]; });
+const unpackLog = log => (log || []).map(e => Array.isArray(e) ? { sc: e[0], text: typeof e[1] === 'number' ? scLines(e[0])[e[1]] || '' : e[1] } : e).filter(e => e.text);
+async function openQr() {
+  if (current === 'game') saveProgress('game');
+  $('qrImg').className = 'qr wait'; $('qrImg').textContent = '產生中…'; $('qrNote').textContent = '';
+  if (!$('qrBox').open) $('qrBox').showModal();
+  try {
+    const s = save(), full = { v: 1, name: s.name, progress: s.progress, results: Object.fromEntries(Object.entries(s.results).map(([k, r]) => [k, { res: r.res }])), log: packLog(s.log), gl: { rules: GL.rules, quotes: GL.quotes } };
+    // 依序試：全部 → 不帶名詞替換表 → 也不帶日誌
+    const tries = [[full, ''], [{ ...full, gl: null }, '名詞替換表太大，這次沒有帶過去；需要的話請用備份代碼。'], [{ ...full, gl: null, log: [] }, '日誌和名詞替換表太長，這次只帶進度和完成紀錄；完整內容請用「存檔與日誌」的備份代碼。']];
+    let url = '', note = '';
+    for (const [data, msg] of tries) { url = transferUrl(await packTransfer(data)); note = msg; if (url.length <= QR_MAX) break; }
+    if (url.length > QR_MAX) throw new Error('進度資料太大，裝不進一個 QR Code，請改用備份代碼');
+    const qrcode = await loadQrLib(), q = qrcode(0, 'L'); q.addData(url, 'Byte'); q.make();
+    $('qrImg').className = 'qr'; $('qrImg').innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+    $('qrNote').textContent = note || `存檔「${s.name}」${s.progress ? '，' + progressText(s.progress) : ''}`;
+  } catch (e) { $('qrImg').className = 'qr wait'; $('qrImg').textContent = '無法產生'; $('qrNote').textContent = e.message; }
+}
+$('qrOpen').onclick = openQr;
+$('qrOpen2').onclick = () => { $('playMenu').close(); openQr(); };
+$('qrClose').onclick = () => $('qrBox').close();
+$('qrBox').addEventListener('click', e => { if (e.target === $('qrBox')) $('qrBox').close(); });
+// 掃描後打開的網址：問過再匯入成一個新存檔，不蓋掉這台原本的進度
+async function takeTransfer() {
+  const m = /^#take=([jz][\w-]+)$/.exec(location.hash); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let d; try { d = await unpackTransfer(m[1]); } catch (e) { toast('這個 QR Code 的內容讀不出來，可能拍得不完整，請重掃一次。'); return; }
+  const where = d.progress && findSc(d.progress.scenarioId) ? `，進度在「${progressText(d.progress)}」` : '';
+  confirmThen(`要匯入另一台裝置的存檔「${d.name}」${where}嗎？會另存成一個新存檔，不影響這台原本的進度。`, '', () => {
+    const id = 's' + Date.now();
+    SV.list[id] = { id, name: `${d.name}（從其他裝置）`, created: Date.now(), updated: Date.now(), progress: d.progress || null, results: d.results || {}, log: unpackLog(d.log) };
+    SV.active = id; persist();
+    if (d.gl) { (d.gl.rules || []).forEach(r => { if (r && r.from && !GL.rules.some(x => x.from === r.from && x.scope === r.scope)) GL.rules.push(r); }); if (typeof d.gl.quotes === 'boolean') GL.quotes = d.gl.quotes; saveGL(); }
+    if (save().progress && findSc(save().progress.scenarioId)) resume(); else toHome();
+    toast('已匯入，從上次的進度繼續。');
+  }, '匯入');
+}
 $('savesBtn').onclick = openSaves;
 $('continueBtn').onclick = resume;

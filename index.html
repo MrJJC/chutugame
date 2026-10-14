@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202610141410">
+<link rel="stylesheet" href="css/style.css?v=202610141452">
 </head>
 <body data-mode="menu">
 <div class="backdrop" aria-hidden="true"><i class="veil"></i></div>
@@ -97,6 +97,7 @@
     <div class="field"><label>存檔（同一個循環可以有不同組人各自的進度）</label><div id="saveList"></div></div>
     <div class="addrow" style="grid-template-columns:1fr auto"><input id="saveNameIn" placeholder="存檔名稱，例如：家庭場" aria-label="存檔名稱"><button class="small-btn" id="saveNew">新增存檔</button></div>
     <div class="settings-actions"><button class="small-btn" id="saveRename">把目前存檔改成這個名字</button><button class="small-btn" id="saveDel">刪除目前存檔</button></div>
+    <button class="btn" id="qrOpen">用 QR Code 帶到另一台裝置</button>
     <div class="status" id="saveStatus" role="status"></div>
     <div class="field"><label>戰役日誌</label><div id="logBody" class="effects"></div></div>
     <div class="field"><label for="backupBox">備份（包含所有存檔、名詞替換表、朗讀設定）</label>
@@ -181,8 +182,14 @@
 <dialog id="playMenu" aria-label="朗讀選項">
   <button class="sheet-row" id="autoBtn" aria-pressed="true"><span>念完自動接下一段</span><i class="switch"></i></button>
   <label class="sheet-row" for="ambVol"><span>背景音音量</span><input type="range" id="ambVol" min="0.1" max="1" step="0.05" aria-label="背景音音量"></label>
+  <button class="sheet-row" id="qrOpen2"><span>帶到另一台裝置（QR Code）</span><span class="chev">›</span></button>
   <button class="sheet-row" id="gearBtn"><span>朗讀設定</span><span class="chev">›</span></button>
   <div class="acts"><button class="btn" id="playMenuClose">關閉</button></div></dialog>
+<dialog id="qrBox" aria-label="帶到另一台裝置">
+  <p>用另一台裝置的相機掃描，打開網頁後確認匯入，就會從目前的進度繼續。</p>
+  <div class="qr" id="qrImg" role="img" aria-label="QR Code"></div>
+  <p class="note" id="qrNote"></p>
+  <div class="acts"><button class="btn" id="qrClose">關閉</button></div></dialog>
 <dialog id="confirm"><p id="confirmText"></p>
   <div class="acts"><button class="btn" id="cNo">取消</button><button class="btn solid" id="cYes">推進</button></div></dialog>
 <dialog id="resPick"><p>卡面寫著「進入（→結局 N）」，或所有調查員都已撤退／被擊敗時，選擇對應的結局：</p>
@@ -192,15 +199,15 @@
   <div id="branchList"></div></dialog>
 <div id="toast" role="alert"></div>
 
-<script src="js/config.js?v=202610141410"></script>
-<script src="js/sample.js?v=202610141410"></script>
-<script src="js/loader.js?v=202610141410"></script>
-<script src="js/state.js?v=202610141410"></script>
-<script src="js/ui.js?v=202610141410"></script>
-<script src="js/audio.js?v=202610141410"></script>
-<script src="js/player.js?v=202610141410"></script>
-<script src="js/game.js?v=202610141410"></script>
-<script src="js/panels.js?v=202610141410"></script>
-<script src="js/main.js?v=202610141410"></script>
+<script src="js/config.js?v=202610141452"></script>
+<script src="js/sample.js?v=202610141452"></script>
+<script src="js/loader.js?v=202610141452"></script>
+<script src="js/state.js?v=202610141452"></script>
+<script src="js/ui.js?v=202610141452"></script>
+<script src="js/audio.js?v=202610141452"></script>
+<script src="js/player.js?v=202610141452"></script>
+<script src="js/game.js?v=202610141452"></script>
+<script src="js/panels.js?v=202610141452"></script>
+<script src="js/main.js?v=202610141452"></script>
 </body>
 </html>
