@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202610141524">
+<link rel="stylesheet" href="css/style.css?v=202610171930">
 </head>
 <body data-mode="menu">
 <div class="backdrop" aria-hidden="true"><i class="veil"></i></div>
@@ -18,12 +18,13 @@
   <header class="bar">
     <button class="icon-btn" id="homeBtn" aria-label="回到選擇關卡"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div class="where"><small id="whereSmall"></small><strong id="whereBig"></strong></div>
-    <button class="icon-btn" id="soundBtn" aria-pressed="true" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
+    <button class="icon-btn amb-toggle" id="soundBtn" aria-pressed="false" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
     <button class="icon-btn" id="menuBtn" aria-label="朗讀選項"><svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
   </header>
 
   <section class="screen home" id="home">
     <div class="playbill">
+      <button class="icon-btn amb-toggle" id="soundBtn2" aria-pressed="false" aria-label="背景音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></svg></button>
       <h1 id="cycleName">卡爾克薩之路</h1>
       <p id="cycleProg" role="status">正在讀取劇本…</p>
       <div class="progbar"><i id="cycleBar"></i></div>
@@ -48,6 +49,10 @@
       <div class="rule"></div>
       <p class="hint caret">輕觸畫面，開始</p>
     </div>
+    <div class="title-foot" id="prepBox" hidden>
+      <button class="small-btn" id="prepBtn">先準備這關的語音</button>
+      <p class="status" id="prepStatus" role="status"></p>
+    </div>
   </section>
 
   <section class="screen" id="story">
@@ -66,9 +71,14 @@
 
   <section class="screen" id="game">
     <div id="decks"></div>
+    <div class="locs" id="locs" hidden>
+      <div class="locs-head">地點</div>
+      <div class="loc-list" id="locList"></div>
+    </div>
     <div class="game-foot">
-      <button class="btn" id="undoBtn">回上一張</button>
-      <button class="btn" id="resBtn">卡牌指示進入結局</button>
+      <button class="btn" id="undoBtn">回上一步</button>
+      <button class="btn" id="replayBtn">重聽</button>
+      <button class="btn" id="resBtn">進入結局</button>
     </div>
   </section>
 
@@ -138,22 +148,19 @@
         <div class="status" id="vaultStatus" role="status"></div></div>
       <div class="field"><label for="keyIn">OpenRouter 金鑰</label><input id="keyIn" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
         <p class="note">只存在這台裝置。沒填或連線失敗時，會自動改用裝置語音。</p></div>
-      <details class="lib-io" id="sealBox">
-        <summary>把金鑰加密後內建（給網站管理者）</summary>
-        <p class="note">先在上面填好金鑰，再設一個通行密碼，按「產生密文」。把產生的那一行交給維護程式的人放進 js/config.js 的 KEY_VAULT。加密在這台裝置上完成，金鑰和密碼都不會送出去。密碼越長越安全，四個字的密碼很容易被試出來。</p>
-        <div class="addrow pair"><input id="sealPass" type="password" autocomplete="off" placeholder="通行密碼" aria-label="通行密碼"><button class="small-btn" id="sealBtn">產生密文</button></div>
-        <textarea id="sealOut" readonly placeholder="密文會出現在這裡" aria-label="密文"></textarea>
-        <div class="status" id="sealStatus" role="status"></div>
-      </details>
-      <div class="field"><label for="presetSel">模型與聲音</label><select id="presetSel"></select>
-        <p class="note">選了就會套用並試聽。括號裡是相對 Gemini Flash 的價格。</p></div>
+      <div class="field"><label for="modelSel">模型</label><select id="modelSel"></select>
+        <p class="note">括號裡是相對 Gemini Flash 的價格。</p></div>
+      <div class="field" id="voiceRow"><label for="onVoiceSel">聲音</label><select id="onVoiceSel"></select>
+        <p class="note">選了就會套用並試聽。「候選」是原廠公布的聲音，還沒試過能不能用，聽起來不錯再告訴維護的人加進正式清單。</p></div>
       <div class="field" id="customVoice" hidden><label for="modelIn">自訂：OpenRouter 的模型代號</label><input id="modelIn" spellcheck="false">
         <label for="gvoiceIn">自訂：聲音名稱（依模型而定，有些可留空）</label><input id="gvoiceIn" spellcheck="false"></div>
+      <div class="range"><label for="orateIn">語速</label><input type="range" id="orateIn" min="0.75" max="1.3" step="0.05"><span id="orateOut"></span></div>
       <div class="field"><label for="styleIn">語氣指示</label><textarea id="styleIn"></textarea>
         <p class="note">聽到這段話被念出來就清空。有些模型不理會它。</p></div>
       <div class="field"><label>語音存檔</label>
         <p class="note">產生過的句子存在這台裝置，重聽不再收費。</p>
         <div class="settings-actions"><span class="status" id="clipInfo"></span><button class="small-btn" id="clipClearBtn">清除</button></div></div>
+      <details class="lib-io" id="fallbackBox"><summary>線上語音失敗時的備用聲音</summary></details>
     </div>
     <div class="group" id="grpDevice">
       <h3>裝置語音</h3>
@@ -163,13 +170,27 @@
       <div class="range"><label for="pitchIn">音調</label><input type="range" id="pitchIn" min="0.5" max="1.2" step="0.05"><span id="pitchOut"></span></div>
     </div>
     <div class="group">
+      <h3>背景音與螢幕</h3>
+      <div class="range"><label for="ambVol2">音量</label><input type="range" id="ambVol2" min="0.1" max="1" step="0.05"><span></span></div>
+      <p class="note">背景音用首頁或遊戲畫面上方的喇叭開關。iPhone／iPad 的靜音鍵撥到靜音時聽不到背景音。</p>
+      <label class="check"><input type="checkbox" id="wakeIn"> 遊戲中保持螢幕常亮</label>
+    </div>
+    <div class="group">
       <h3>文字呈現</h3>
       <label class="opt"><input type="radio" name="reveal" value="sentence"><span><b>念到哪一句亮哪一句</b><small>整段先顯示，建議用這個</small></span></label>
       <label class="opt"><input type="radio" name="reveal" value="full"><span><b>整段直接顯示</b><small>不做任何效果</small></span></label>
       <label class="opt"><input type="radio" name="reveal" value="type"><span><b>逐字打字</b><small>只搭配裝置語音，和聲音只能大約對上</small></span></label>
     </div>
+    <p class="note">設定改了就會儲存並生效，只存在這台裝置。</p>
     <div class="status" id="setStatus" role="status"></div>
     <div class="settings-actions two"><button class="btn" id="testBtn">試聽</button><button class="btn solid" id="saveBtn">完成</button></div>
+    <details class="lib-io" id="sealBox">
+      <summary>進階：把金鑰加密後內建（給網站管理者）</summary>
+      <p class="note">先在上面填好金鑰，再設一個通行密碼，按「產生密文」。把產生的那一行交給維護程式的人放進 js/config.js 的 KEY_VAULT。加密在這台裝置上完成，金鑰和密碼都不會送出去。密碼越長越安全，四個字的密碼很容易被試出來。</p>
+      <div class="addrow pair"><input id="sealPass" type="password" autocomplete="off" placeholder="通行密碼" aria-label="通行密碼"><button class="small-btn" id="sealBtn">產生密文</button></div>
+      <textarea id="sealOut" readonly placeholder="密文會出現在這裡" aria-label="密文"></textarea>
+      <div class="status" id="sealStatus" role="status"></div>
+    </details>
   </section>
   <nav class="tabbar" aria-label="主選單">
     <button id="tabHome"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>關卡</button>
@@ -197,17 +218,20 @@
   <div class="acts"><button class="btn" id="resCancel">取消</button></div></dialog>
 <dialog id="branchPick"><p id="branchText"></p>
   <div id="branchList"></div></dialog>
+<dialog id="sheetPick"><p id="sheetText"></p>
+  <div id="sheetList"></div>
+  <div class="acts"><button class="btn" id="sheetCancel">取消</button></div></dialog>
 <div id="toast" role="alert"></div>
 
-<script src="js/config.js?v=202610141524"></script>
-<script src="js/sample.js?v=202610141524"></script>
-<script src="js/loader.js?v=202610141524"></script>
-<script src="js/state.js?v=202610141524"></script>
-<script src="js/ui.js?v=202610141524"></script>
-<script src="js/audio.js?v=202610141524"></script>
-<script src="js/player.js?v=202610141524"></script>
-<script src="js/game.js?v=202610141524"></script>
-<script src="js/panels.js?v=202610141524"></script>
-<script src="js/main.js?v=202610141524"></script>
+<script src="js/config.js?v=202610171930"></script>
+<script src="js/sample.js?v=202610171930"></script>
+<script src="js/loader.js?v=202610171930"></script>
+<script src="js/state.js?v=202610171930"></script>
+<script src="js/ui.js?v=202610171930"></script>
+<script src="js/audio.js?v=202610171930"></script>
+<script src="js/player.js?v=202610171930"></script>
+<script src="js/game.js?v=202610171930"></script>
+<script src="js/panels.js?v=202610171930"></script>
+<script src="js/main.js?v=202610171930"></script>
 </body>
 </html>

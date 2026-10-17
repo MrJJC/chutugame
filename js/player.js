@@ -41,7 +41,8 @@ function narrate(list, after) {
     ['storyLabel', 'storyCount', 'rest', 'under'].forEach(id => { $(id).textContent = ''; }); $('shown').replaceChildren(); $('storyBar').style.width = '100%';
     finishAll(); return;
   }
-  playPassage(0);
+  // after.start：從第幾段開始（重開後接著念、從設定回來）
+  playPassage(Math.min(Math.max(0, (after && after.start) || 0), P.list.length - 1));
 }
 function splitSent(t) { return (t.match(/[^。！？]+[。！？]*[」』”）]*/g) || [t]).filter(s => s.trim()); }
 // 一段文字實際送去念的內容（套過名詞替換的讀音）
@@ -50,6 +51,7 @@ function playPassage(i) {
   if ((S.reveal || 'sentence') === 'type') { playTyped(i); return; }
   stopPlayback();
   P.i = i; P.done = false; P.full = false; P.mode = S.reveal;
+  if (P.after && P.after.onItem) P.after.onItem(i);
   const item = P.list[i], run = P.run;
   const raw = S.reveal === 'full' ? [item.text] : splitSent(item.text);
   const disp = raw.map(s => applyGL(s, 'display')), sp = raw.map(s => applyGL(s, 'speech'));
@@ -90,12 +92,15 @@ function playPassage(i) {
   synth(whole).then(url => {
     clearTimeout(wait);
     if (run !== P.run) return;
-    const a = new Audio(url); let fired = false;
-    const end = () => { if (!fired) { fired = true; if (run === P.run) step(els.length); } };
-    const device = () => { if (!fired) deviceOnly(whole, end); };
+    const a = AUD; let fired = false;
+    a.src = url; setRate(a);
+    // 換 src 時舊的那段可能還會丟出事件：不是這一段的一律不理
+    const mine = () => a.src === url && run === P.run;
+    const end = () => { if (!fired && mine()) { fired = true; step(els.length); } };
+    const device = () => { if (!fired && mine()) deviceOnly(whole, end); };
     P.stopFns.push(() => a.pause());
     a.ontimeupdate = () => {
-      if (run !== P.run || fired || !a.duration) return;
+      if (!mine() || fired || !a.duration) return;
       const at = a.currentTime / a.duration * ends[ends.length - 1], k = ends.findIndex(e => at < e);
       mark(k < 0 ? els.length - 1 : k);
     };
@@ -114,6 +119,7 @@ function playTyped(i) {
   P.mode = 'type';
   stopPlayback();
   P.i = i; P.done = false; P.full = false; P.revealed = -1;
+  if (P.after && P.after.onItem) P.after.onItem(i);
   const item = P.list[i], text = applyGL(item.text, 'display'), speech = applyGL(item.text, 'speech'), run = P.run;
   P.cur = text;
   $('storyLabel').textContent = item.label || '';
@@ -146,6 +152,7 @@ function onPassageEnd(run) {
   if (auto) { const t = setTimeout(() => { if (run === P.run) playPassage(P.i + 1); }, 900); P.stopFns.push(() => clearTimeout(t)); }
 }
 function finishAll() {
+  keepAmb();
   const a = P.after || {}, fx = $('effects');
   fx.replaceChildren();
   if (a.effects && a.effects.length) {

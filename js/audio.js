@@ -41,7 +41,7 @@ const clipDB = new Promise(res => {
 const clipStore = async mode => { const db = await clipDB; return db ? db.transaction('clips', mode).objectStore('clips') : null; };
 const clipReq = make => new Promise(res => { try { const r = make(); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch (e) { res(null); } });
 async function clipGet(k) { const st = await clipStore('readonly'); return st ? clipReq(() => st.get(k)) : null; }
-async function clipPut(k, v) { const st = await clipStore('readwrite'); if (st) clipReq(() => st.put(v, k)); }
+async function clipPut(k, v) { const st = await clipStore('readwrite'); if (st) await clipReq(() => st.put(v, k)); }
 async function clipClear() { const st = await clipStore('readwrite'); if (st) await clipReq(() => st.clear()); audioCache.clear(); }
 async function clipStats() {
   const st = await clipStore('readonly'); if (!st) return null;
@@ -51,11 +51,15 @@ async function clipStats() {
     r.onerror = () => res(null);
   });
 }
-function synth(text) {
+// 存檔的鍵：同一句、同模型同聲音同語氣才算同一段。語速是播放時調的，不在鍵裡
+const clipKey = text => `${S.model}|${S.gvoice}|${(S.style || '').trim()}|${text}`;
+// 拿到一段的音訊資料：先找存檔，沒有才花錢產生並存起來。同一段同時要好幾次只送一個請求
+const inflight = new Map();
+function fetchClip(text) {
+  const k = clipKey(text);
+  if (inflight.has(k)) return inflight.get(k);
   // 語氣指示要放 instructions，接在文字前面會被念出來
   const style = (S.style || '').trim();
-  const k = `${S.model}|${S.gvoice}|${style}|${text}`;
-  if (audioCache.has(k)) return audioCache.get(k);
   const p = (async () => {
     let clip = await clipGet(k);
     if (!clip) {
@@ -70,23 +74,49 @@ function synth(text) {
       if (!r.ok && /response_format/.test(m)) { r = await ask(first === 'pcm' ? 'mp3' : 'pcm'); if (r.ok) m = ''; }
       if (!r.ok) throw new Error(m || `HTTP ${r.status}`);
       clip = { type: (r.headers.get('content-type') || '').toLowerCase(), buf: await r.arrayBuffer() };
-      clipPut(k, clip);
+      await clipPut(k, clip);
     }
+    return clip;
+  })();
+  inflight.set(k, p); const done = () => inflight.delete(k); p.then(done, done);
+  return p;
+}
+function synth(text) {
+  const k = clipKey(text);
+  if (audioCache.has(k)) return audioCache.get(k);
+  const p = fetchClip(text).then(clip => {
     const { type, buf } = clip;
     if (/mpeg|mp3|wav|ogg|aac|flac/.test(type)) return URL.createObjectURL(new Blob([buf], { type }));
     // 回傳的 Content-Type 像 audio/pcm;rate=24000;channels=1
     return URL.createObjectURL(wavFromPcm(buf, +(/rate=(\d+)/.exec(type) || [])[1] || 24000, +(/channels=(\d+)/.exec(type) || [])[1] || 1));
-  })();
+  });
   audioCache.set(k, p); p.catch(() => audioCache.delete(k));
   return p;
 }
+
+// 線上語音一直用同一個 <audio>：iPhone 只要它第一次是在點擊時播過，之後自動接下一段也准播
+const AUD = new Audio(); AUD.preload = 'auto';
+const SILENT = URL.createObjectURL(wavFromPcm(new ArrayBuffer(2400)));
+let audUnlocked = false;
+function unlockAudio() {
+  if (audUnlocked) return; audUnlocked = true;
+  AUD.src = SILENT; AUD.play().then(() => { if (AUD.src === SILENT) AUD.pause(); }).catch(() => { audUnlocked = false; });
+}
+// 線上語音的語速：播放時加快放慢（保持音高），不用重新產生
+function setRate(a) { a.defaultPlaybackRate = a.playbackRate = S.orate || 1; a.preservesPitch = a.webkitPreservesPitch = true; }
 
 /* ---------- ambience ----------
    背景音全部即時合成，不下載音檔。底層很輕：不和諧的低音、遠遠的風、一點老唱片雜訊。
    氣氛靠不定時冒出來的東西：走音的音樂盒、慢慢往下滑的高音、像有人在耳邊吐氣的聲音、遠處的鐘、
    空蕩劇院裡的管風琴、悶雷。這些都送進長殘響，聽起來在遠處、在別的房間。 */
-let ctx = null, amb = null;
-function ensureCtx() { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; if (!ctx) ctx = new AC(); ctx.resume(); return ctx; }
+// 背景音預設關，使用者自己打開；打開後所有畫面都播，再按一次才停
+let ctx = null, amb = null, ambOn = false;
+function ensureCtx() {
+  unlockAudio();
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+  if (!ctx) { ctx = new AC(); ctx.onstatechange = () => { if (ambOn && ctx.state !== 'running' && ctx.state !== 'closed') setTimeout(keepAmb, 300); }; }
+  ctx.resume(); return ctx;
+}
 const ambLevel = () => .7 * (S.ambVol == null ? .5 : S.ambVol);
 // c 可以是真的 AudioContext，也可以是離線算圖用的 OfflineAudioContext（測試用）
 function buildAmb(c, out) {
@@ -188,15 +218,25 @@ function buildAmb(c, out) {
   return { master, nodes, schedule };
 }
 function startAmb() {
+  if (amb) return true;
   const c = ensureCtx(); if (!c) return false;
   const a = buildAmb(c, c.destination);
   a.master.gain.linearRampToValueAtTime(ambLevel(), c.currentTime + 3);
-  // 事件一次排 30 秒，快排完時再排下一段
+  // 事件一次排 30 秒，快排完時再排下一段。切到背景時計時器會被放慢，回來時已經過了就從現在重排
   let until = c.currentTime + .5;
   const more = () => { a.schedule(until, 30); until += 30; };
-  more(); a.timer = setInterval(() => { if (c.currentTime > until - 8) more(); }, 4000);
+  a.kick = () => { if (until < c.currentTime) until = c.currentTime + .5; if (c.currentTime > until - 8) more(); };
+  more(); a.timer = setInterval(a.kick, 4000);
   amb = a; return true;
 }
+// 被系統暫停（鎖螢幕、切 App、來電、語音播放）後叫回來
+function keepAmb() {
+  if (!ambOn) return;
+  if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {});
+  if (!amb) startAmb(); else amb.kick();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAmb(); });
+document.addEventListener('pointerdown', keepAmb, true);
 function setAmbVol(v) {
   S.ambVol = v; store.set('asr.settings', S);
   if (amb && ctx) { amb.master.gain.cancelScheduledValues(ctx.currentTime); amb.master.gain.setTargetAtTime(ambLevel(), ctx.currentTime, .15); }
@@ -207,4 +247,55 @@ function stopAmb() {
   master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
   master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.5);
   setTimeout(() => { nodes.forEach(n => { try { n.stop(); } catch (e) {} }); master.disconnect(); }, 1600);
+}
+
+/* ---------- 開局前先準備這關的線上語音 ----------
+   把這關所有會念到的段落（開場的每條分支、每張卡正背面、結局、地點卡）先產生並存起來，玩的時候就不用等。
+   段落文字要和播放時完全一樣（同一個 speechOf），存檔的鍵才對得上。 */
+const PREP = { sc: null, total: 0, done: 0, fail: 0, stop: false, running: false };
+function prepTexts(sc) {
+  const items = [];
+  const walk = ns => ns.forEach(n => { if (n.k === 'ask') n.opts.forEach(o => walk(o.nodes)); else if (n.k === 'read') items.push(...chunks(n.text).map(text => ({ text }))); });
+  walk(sc.flow); Object.values(sc.resolutions).forEach(r => walk(r.flow));
+  sc.decks.forEach(d => d.cards.forEach(c => {
+    items.push(...cardItems(c, d.label), ...cardItems(c, d.label, true));
+    (c.cases || []).forEach((x, i) => items.push(...backItems(c, d.label, i)));
+  }));
+  sc.locs.forEach(l => items.push(...locItems(l, true)));
+  return [...new Set(items.filter(x => x.text).map(speechOf))];
+}
+async function prepVoices() {
+  const sc = CUR, texts = prepTexts(sc);
+  $('prepStatus').textContent = '計算中…';
+  const todo = [];
+  for (const t of texts) if (!(await clipGet(clipKey(t)))) todo.push(t);
+  if (!todo.length) { $('prepStatus').textContent = `這關 ${texts.length} 段語音都準備好了。`; return; }
+  $('prepStatus').textContent = '';
+  const chars = todo.reduce((n, t) => n + t.length, 0);
+  const mb = /^google\//.test(S.model) ? `，約佔 ${Math.ceil(chars * 0.012)} MB` : '';
+  confirmThen(`這關共 ${texts.length} 段，其中 ${texts.length - todo.length} 段已經存過。要產生剩下的 ${todo.length} 段嗎？（約 ${chars} 字${mb}。花費以 OpenRouter 帳單為準）`, '', () => runPrep(sc, todo), '開始準備');
+}
+async function runPrep(sc, todo) {
+  Object.assign(PREP, { sc: sc.id, total: todo.length, done: 0, fail: 0, stop: false, running: true }); renderPrep();
+  let i = 0;
+  // 一次兩個請求；失敗的再試一次，還是不行就跳過，玩到時再產生
+  const worker = async () => {
+    while (!PREP.stop && i < todo.length) {
+      const t = todo[i++];
+      try { await fetchClip(t); } catch (e) { try { await fetchClip(t); } catch (e2) { PREP.fail++; } }
+      PREP.done++; renderPrep();
+    }
+  };
+  await Promise.all([worker(), worker()]);
+  PREP.running = false; renderPrep();
+}
+function renderPrep() {
+  if (!CUR) return;
+  const on = S.engine === 'openrouter' && !!S.key && !CUR.mute;
+  $('prepBox').hidden = !on; if (!on) return;
+  const mine = PREP.sc === CUR.id;
+  $('prepBtn').textContent = mine && PREP.running ? (PREP.stop ? '正在停止…' : '取消') : '先準備這關的語音';
+  $('prepStatus').textContent = !mine ? '' : PREP.running ? `準備中 ${PREP.done}／${PREP.total}，可以先開始玩`
+    : PREP.stop ? `已取消，完成 ${PREP.done - PREP.fail} 段。`
+    : PREP.fail ? `完成，有 ${PREP.fail} 段沒準備好，玩到時再產生。` : `這關的語音都準備好了（${PREP.total} 段）。`;
 }

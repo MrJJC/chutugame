@@ -2,7 +2,7 @@
 let CYCLES = [];
 function normalize(cycles) {
   cycles.forEach(cy => cy.scenarios.forEach(sc => {
-    sc.cycle = cy; sc.kind = sc.kind || 'play'; sc.resolutions = sc.resolutions || {};
+    sc.cycle = cy; sc.kind = sc.kind || 'play'; sc.resolutions = sc.resolutions || {}; sc.locs = sc.locs || []; sc.locStart = sc.locStart || [];
     // 示意劇本用簡寫（intro／agenda／act／text＋log），在這裡轉成統一格式
     if (!sc.flow) sc.flow = sc.intro ? [{ k: 'read', text: sc.intro }] : [];
     if (!sc.decks) sc.decks = [['agenda', '密謀'], ['act', '場景']].filter(([k]) => (sc[k] || []).length).map(([kind, label]) => ({ kind, label, cards: sc[kind] }));
@@ -50,6 +50,21 @@ const ICON = { action: '［行動］', reaction: '［反應］', free: '［免�
 function clean(s) {
   return (s || '').replace(/<br\s*\/?>/gi, '\n').replace(/\\n/g, '\n').replace(/<[^>]+>/g, '')
     .replace(/\[\[([^\]]+)\]\]/g, '$1').replace(/\[([a-z_]+)\]/g, (m, k) => ICON[k] || '').replace(/[ \t]+\n/g, '\n').trim();
+}
+
+// 卡背裡夾著劇情的情況（真相幻影場景 1、蒼白面具場景 2）：用 <hr> 分成幾種情況，
+// 每種是「<b>條件：</b>＋<blockquote>劇情</blockquote>＋效果」。沒有 <blockquote> 的卡回傳 null
+function backCases(raw) {
+  if (!/<blockquote/i.test(raw || '')) return null;
+  const common = [], list = [];
+  raw.split(/<hr\s*\/?>/i).forEach(part => {
+    const q = /<blockquote>([\s\S]*?)<\/blockquote>/i.exec(part);
+    if (!q) { common.push(clean(part)); return; }
+    const b = /<b>([\s\S]*?)<\/b>/i.exec(part.slice(0, q.index));
+    const rest = part.slice(0, q.index).replace(b ? b[0] : '', '') + part.slice(q.index + q[0].length);
+    list.push({ cond: clean(b ? b[1] : '').replace(/[：:]\s*$/, '') || `情況 ${list.length + 1}`, story: clean(q[1]), fx: clean(rest) });
+  });
+  return list.length ? { common: common.filter(Boolean).join('\n'), list } : null;
 }
 
 /* ---------- 戰役指南 → 流程 ----------
@@ -210,9 +225,11 @@ async function loadReal() {
       const card = c => {
         // 背面是另一張卡（敵人、資產）的單面密謀／場景：把那張卡當背面
         const link = !c.double_sided && c.back_link && enBy[c.back_link];
+        const cases = link ? null : backCases((zhBy[c.code] || {}).back_text || c.back_text);
         return {
           code: c.code, stage: +c.stage, name: side(c, 'name'), flavor: side(c, 'flavor'),
-          backName: link ? side(link, 'name') : side(c, 'back_name'), backFlavor: link ? side(link, 'flavor') : side(c, 'back_flavor'), backText: link ? side(link, 'text') : side(c, 'back_text'),
+          backName: link ? side(link, 'name') : side(c, 'back_name'), backFlavor: link ? side(link, 'flavor') : side(c, 'back_flavor'),
+          backText: link ? side(link, 'text') : cases ? cases.common : side(c, 'back_text'), ...(cases ? { cases: cases.list } : {}),
           res: [...new Set(((c.back_text || '').match(/→R\d+/g) || []).map(x => x.slice(1)))],
           need: c.type_code === 'agenda' ? (c.doom ? `毀滅 ${c.doom}` : '') : (c.clues ? (c.clues_fixed ? `${c.clues} 線索` : `每位調查員 ${c.clues} 線索`) : '目標見卡面')
         };
@@ -222,12 +239,21 @@ async function loadReal() {
         kind: d.kind, label: d.label,
         cards: en.filter(c => c.type_code === d.kind && (d.codes ? d.codes.includes(c.code) : sets.includes(c.encounter_code))).sort(byStage).map(card)
       })).filter(d => d.cards.length);
+      // 地點卡：ArkhamDB 的 name／flavor 是翻開面，back_name／back_flavor 是未翻開面。卡上印的編號是卡號去掉循環前綴
+      const locs = story ? [] : en.filter(c => c.type_code === 'location' && sets.includes(c.encounter_code)).map(c => ({
+        code: c.code, num: c.code.slice(2).replace(/^0+/, ''), name: side(c, 'name'), sub: clean((zhBy[c.code] || {}).subname || ''), flavor: side(c, 'flavor'),
+        uname: side(c, 'back_name') || side(c, 'name'), uflavor: side(c, 'back_flavor')
+      }));
+      // 開局擺在桌上的地點：劇本檔的擺放圖（只拿來決定清單一開始有哪些，不畫地圖）
+      const layout = g.steps.find(s => s.type === 'location_setup' && !/set_aside/.test(s.id));
+      const locStart = layout ? layout.locations.flat().map(x => x.replace(/_back$/, '')).filter(x => locs.some(l => l.code === x)) : [];
       const resolutions = {};
       (g.resolutions || []).forEach(r => { resolutions[r.id] = { flow: [...(r.text ? [{ k: 'read', text: clean(tr(r.text)) }] : []), ...walk(r.steps)] }; });
-      return { id: `${cy.id}.${cfg.id}`, code: cfg.code, title: cfg.title || guideTitle(g), kind: cfg.kind || 'play', tag: cfg.tag, mute: !!cfg.mute, flow: walk(g.setup), decks, swap: cfg.swap || {}, resolutions, names: [] };
+      return { id: `${cy.id}.${cfg.id}`, code: cfg.code, title: cfg.title || guideTitle(g), kind: cfg.kind || 'play', tag: cfg.tag, mute: !!cfg.mute, flow: walk(g.setup), decks, swap: cfg.swap || {}, resolutions, locs, locStart, names: [] };
     });
     scenarios.forEach(sc => {
-      const all = [...flowTexts(sc.flow), ...sc.decks.flatMap(d => d.cards).flatMap(c => [c.flavor, c.backFlavor, c.backText]), ...Object.values(sc.resolutions).flatMap(r => flowTexts(r.flow))].join('\n');
+      const all = [...flowTexts(sc.flow), ...sc.decks.flatMap(d => d.cards).flatMap(c => [c.flavor, c.backFlavor, c.backText, ...(c.cases || []).flatMap(x => [x.story, x.fx])]),
+        ...sc.locs.flatMap(l => [l.name, l.uname, l.flavor, l.uflavor]), ...Object.values(sc.resolutions).flatMap(r => flowTexts(r.flow))].join('\n');
       sc.names = [...names].filter(n => all.includes(n));
     });
     cycles.push({ id: cy.id, name: cy.name, scenarios });
@@ -273,13 +299,23 @@ function sections(sc) {
   const intro = flowGroups(sc.flow, '開場', sc.kind === 'story' ? sc.title : '開場');
   if (sc.kind === 'story') return [{ title: sc.title, groups: intro }];
   const starts = sc.decks.flatMap(d => deckStart(d).map(([c]) => [d, c]));
-  const card = (d, c) => [
-    ...(starts.some(([, x]) => x === c) ? [] : [{ sub: `${d.label} ${ROMAN[c.stage]} 正面 · ${c.name}`, items: cardItems(c, d.label) }]),
-    { sub: `${d.label} ${ROMAN[c.stage]} 背面 · ${c.backName}`, items: cardItems(c, d.label, true), fx: c.backText }
-  ];
+  const card = (d, c) => {
+    const back = `${d.label} ${ROMAN[c.stage]} 背面 · ${c.backName}`;
+    return [
+      ...(starts.some(([, x]) => x === c) ? [] : [{ sub: `${d.label} ${ROMAN[c.stage]} 正面 · ${c.name}`, items: cardItems(c, d.label) }]),
+      { sub: back, items: cardItems(c, d.label, true), fx: c.backText },
+      // 卡背分情況的：每種情況一小節
+      ...(c.cases || []).map(x => ({ sub: `${back}（${x.cond}）`, items: chunks(x.story).map(t => ({ text: t, label: back })), fx: x.fx }))
+    ];
+  };
+  const locLabel = l => `${l.num} · ${l.name}${l.sub ? '・' + l.sub : ''}`;
   return [
     { title: '開場與開局', groups: [...intro, ...starts.map(([d, c]) => ({ sub: `${d.label} ${ROMAN[c.stage]} 正面 · ${c.name}`, items: cardItems(c, d.label) }))] },
     ...sc.decks.map(d => ({ title: `${d.label}卡`, groups: d.cards.flatMap(c => card(d, c)) })),
+    ...(sc.locs.length ? [{ title: '地點卡', loc: true, groups: sc.locs.slice().sort((a, b) => parseInt(a.num, 10) - parseInt(b.num, 10) || a.num.localeCompare(b.num)).map(l => ({
+      sub: l.uname === l.name ? `地點 ${locLabel(l)}` : `地點 ${locLabel(l)}（未翻開：${l.uname}）`,
+      items: [...chunks(l.uflavor).map(t => ({ text: t, label: `地點 · ${l.uname}` })), ...chunks(l.flavor).map(t => ({ text: t, label: `地點 ${locLabel(l)}` }))]
+    })) }] : []),
     { title: '結局', groups: resIds(sc).flatMap(id => flowGroups(sc.resolutions[id].flow, resLabel(id), resLabel(id))) }
   ];
 }

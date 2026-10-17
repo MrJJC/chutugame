@@ -1,6 +1,6 @@
 'use strict';
 /* ---------- settings ---------- */
-const S = Object.assign({ engine: 'browser', voiceURI: '', rate: 1, pitch: 0.9, reveal: 'sentence', key: '', model: 'google/gemini-3.8-flash-tts', gvoice: 'Charon', style: '請用台灣口音的國語，以略為低沉、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣朗讀。' }, store.get('asr.settings', {}));
+const S = Object.assign({ engine: 'browser', voiceURI: '', rate: 1, pitch: 0.9, orate: 1, wake: true, reveal: 'sentence', key: '', model: 'google/gemini-3.8-flash-tts', gvoice: 'Charon', style: '請用台灣口音的國語，以略為低沉、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣朗讀。' }, store.get('asr.settings', {}));
 // 舊預設（低沉、緩慢）沒被使用者改過的話，換成新的預設
 if (S.style === '請用台灣口音的國語，以低沉、緩慢、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣，朗讀以下文字：') S.style = '請用台灣口音的國語，以略為低沉、帶著壓抑不安的語氣，像在昏暗燭光下說故事一樣朗讀。';
 if (S.rate === 0.85 && S.pitch === 0.8) { S.rate = 1; S.pitch = 0.9; }
@@ -13,18 +13,22 @@ const SV = store.get('asr.saves', null) || (() => {
 })();
 const persist = () => { const s = SV.list[SV.active]; if (s) s.updated = Date.now(); store.set('asr.saves', SV); };
 const save = () => SV.list[SV.active] || Object.values(SV.list)[0];
-function saveProgress(phase) {
-  save().progress = { scenarioId: CUR.id, phase, pos: G.pos.slice(), history: G.history.map(h => h.slice()) };
+// cursor：念到哪裡（開場／卡背／結局的第幾段、回答過的題目），重開時從那裡接著念
+function saveProgress(phase, cursor) {
+  save().progress = { scenarioId: CUR.id, phase, pos: G.pos.slice(), history: G.history.map(copySnap), lastBack: G.lastBack.slice(),
+    loc: G.loc.map(x => ({ ...x })), introAns: G.introAns.slice(), ...(cursor ? { cursor } : {}) };
   persist();
 }
-function saveResult(sc, resId, lines) {
+// keep：結局還在念，先記結果和日誌，進度留著
+function saveResult(sc, resId, lines, keep) {
   const s = save();
   s.results[sc.id] = { res: resId, at: Date.now() };
   s.log = s.log.filter(e => e.sc !== sc.id);
   (lines || []).forEach(text => s.log.push({ sc: sc.id, text }));
-  if (s.progress && s.progress.scenarioId === sc.id) s.progress = null;
+  if (!keep && s.progress && s.progress.scenarioId === sc.id) s.progress = null;
   persist();
 }
+function clearProgress(sc) { const s = save(); if (s.progress && s.progress.scenarioId === sc.id) { s.progress = null; persist(); } }
 const fmtTime = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 /* ---------- overrides（逐段校對） ----------

@@ -1,6 +1,6 @@
 'use strict';
 /* ---------- library（文本庫） ---------- */
-const LIB = { cycle: 'all', scenario: 'all', q: '', scroll: 0 };
+const LIB = { cycle: 'all', scenario: 'all', q: '', scroll: 0, openLoc: new Set() };
 function fillMarked(el, text, q) {
   el.replaceChildren();
   const addText = (parent, t) => {
@@ -39,6 +39,14 @@ function renderLibrary() {
     sections(sc).forEach(sec => {
       const flat = sec.groups.flatMap(g => g.items); let k = 0, secShown = false;
       const secEl = document.createElement('div'); secEl.className = 'lib-sec'; secEl.textContent = sec.title;
+      // 這關正在玩：地點卡先收起來，免得看到還沒去過的地點
+      const s = save();
+      if (sec.loc && s.progress && s.progress.scenarioId === sc.id && !LIB.openLoc.has(sc.id)) {
+        if (q) return;
+        const b = document.createElement('button'); b.className = 'small-btn lib-reveal'; b.textContent = '這關正在進行，地點卡先收起來。點這裡顯示';
+        b.onclick = () => { LIB.openLoc.add(sc.id); renderLibrary(); };
+        wrap.append(secEl, b); return;
+      }
       sec.groups.forEach(g => {
         const showItems = [];
         g.items.forEach(it => { const idx = k++; paras++; if (!q || applyGL(it.text, 'display').includes(q)) showItems.push([it, idx]); });
@@ -78,9 +86,17 @@ function textSlots(sc) {
     else if (n.k !== 'goto' && n.text) out.push({ obj: n, key: 'text', where: `${where}${n.k === 'note' ? '（指示）' : ''}` });
   });
   walk(sc.flow, '開場');
-  sc.decks.forEach(d => d.cards.forEach(c => [['flavor', '正面'], ['backFlavor', '背面'], ['backText', '背面效果']].forEach(([key, side]) => {
-    if (c[key]) out.push({ obj: c, key, where: `${d.label} ${ROMAN[c.stage]} ${side}：${side === '正面' ? c.name : c.backName || c.name}` });
-  })));
+  sc.decks.forEach(d => d.cards.forEach(c => {
+    [['flavor', '正面'], ['backFlavor', '背面'], ['backText', '背面效果']].forEach(([key, side]) => {
+      if (c[key]) out.push({ obj: c, key, where: `${d.label} ${ROMAN[c.stage]} ${side}：${side === '正面' ? c.name : c.backName || c.name}` });
+    });
+    (c.cases || []).forEach(x => [['story', '背面劇情'], ['fx', '背面效果']].forEach(([key, side]) => {
+      if (x[key]) out.push({ obj: x, key, where: `${d.label} ${ROMAN[c.stage]} ${side}（${x.cond}）：${c.backName || c.name}` });
+    }));
+  }));
+  (sc.locs || []).forEach(l => [['uflavor', '未翻開'], ['flavor', '翻開']].forEach(([key, side]) => {
+    if (l[key]) out.push({ obj: l, key, where: `地點 ${l.num} ${side}：${side === '翻開' ? l.name : l.uname}` });
+  }));
   resIds(sc).forEach(id => walk(sc.resolutions[id].flow, resLabel(id)));
   return out;
 }
@@ -152,6 +168,7 @@ $('libReset').onclick = () => confirmThen('確定還原全部？你改過的段�
 }, '還原');
 const OVERLAYS = ['library', 'glossary', 'settings', 'story', 'saves'];
 function back() {
+  if (returnTo === 'story' && storyBack) { const b = storyBack; storyBack = null; narrate(b.list, { ...b.after, start: b.i }); return; }
   if (returnTo === 'game') toGame(); else if (returnTo === 'library') openLibrary(true);
   else if (returnTo === 'home') toHome(); else toTitle();
 }
@@ -217,18 +234,30 @@ $('gImport').onclick = () => {
 $('gDone').onclick = back;
 
 /* ---------- settings ---------- */
+// 朗讀到一半進設定：記下那一段，按完成回去接著念
+let storyBack = null;
 function openSettings() {
-  if (!OVERLAYS.includes(current) || current === 'library') returnTo = current; stopPlayback();
+  if (current === 'story') { storyBack = { list: P.list.slice(), i: P.i, after: P.after }; returnTo = 'story'; }
+  else if (!OVERLAYS.includes(current) || current === 'library') returnTo = current;
+  stopPlayback();
+  fillSettings();
+  where('全部循環', '朗讀設定'); show('settings');
+}
+function fillSettings() {
   document.querySelectorAll('input[name=engine]').forEach(r => r.checked = r.value === S.engine);
   document.querySelectorAll('input[name=reveal]').forEach(r => r.checked = r.value === (S.reveal || 'sentence'));
   $('keyIn').value = S.key || ''; $('modelIn').value = S.model; $('gvoiceIn').value = S.gvoice; $('styleIn').value = S.style;
   loadVoices();
-  $('rateIn').value = S.rate; $('rateOut').textContent = (+S.rate).toFixed(2);
-  $('pitchIn').value = S.pitch; $('pitchOut').textContent = (+S.pitch).toFixed(2);
+  $('rateIn').value = S.rate; $('pitchIn').value = S.pitch; $('orateIn').value = S.orate || 1;
+  $('ambVol2').value = S.ambVol == null ? .5 : S.ambVol; $('wakeIn').checked = S.wake !== false;
+  showRanges();
   $('setStatus').textContent = voices.length ? '' : '這台裝置沒有中文語音，會改成只顯示文字。';
-  syncPreset(); showClipInfo(); syncEngine();
-  where('全部循環', '朗讀設定'); show('settings');
+  syncModel(); showClipInfo(); syncEngine();
 }
+const showRanges = () => {
+  $('rateOut').textContent = (+$('rateIn').value).toFixed(2); $('pitchOut').textContent = (+$('pitchIn').value).toFixed(2);
+  $('orateOut').textContent = (+$('orateIn').value).toFixed(2) + '×'; $('ambVol2').nextElementSibling.textContent = Math.round($('ambVol2').value * 100) + '%';
+};
 /* ---------- 內建金鑰：用通行密碼加密／解密（PBKDF2 → AES-GCM，都在瀏覽器裡做） ---------- */
 const b64d = t => Uint8Array.from(atob(t), ch => ch.charCodeAt(0)), b64e = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
 async function vaultCipher(pass, salt, n) {
@@ -267,13 +296,20 @@ $('sealBtn').onclick = async () => {
   } catch (e) { st.classList.add('err'); st.textContent = '這個瀏覽器不支援加密：' + e.message; }
 };
 
-// 只顯示目前聲音來源用得到的設定；線上語音失敗會退回裝置語音，所以那組也留著
+// 只顯示目前聲音來源用得到的設定。線上語音失敗會退回裝置語音，所以那組收進「備用聲音」裡
+const devHome = $('grpDevice').nextElementSibling;
 function syncEngine() {
-  const e = (document.querySelector('input[name=engine]:checked') || {}).value;
-  $('grpOnline').hidden = e !== 'openrouter'; $('grpDevice').hidden = e === 'silent';
+  const e = (document.querySelector('input[name=engine]:checked') || {}).value, dev = $('grpDevice');
+  $('grpOnline').hidden = e !== 'openrouter'; dev.hidden = e === 'silent';
+  if (e === 'openrouter') { if (dev.parentNode !== $('fallbackBox')) $('fallbackBox').append(dev); }
+  else if (dev.parentNode !== devHome.parentNode) devHome.before(dev);
+  dev.classList.toggle('nested', e === 'openrouter');
   $('vaultRow').hidden = !KEY_VAULT || !!$('keyIn').value;
 }
-document.querySelectorAll('input[name=engine]').forEach(r => { r.onchange = syncEngine; });
+// 改了就存，不用按完成；別的分頁改了這邊也跟著換
+$('settings').addEventListener('input', e => { if (!/^(vaultIn|sealPass|sealOut)$/.test(e.target.id)) { readForm(); showRanges(); } });
+$('settings').addEventListener('change', e => { if (!/^(vaultIn|sealPass|sealOut)$/.test(e.target.id)) { readForm(); syncEngine(); } });
+window.addEventListener('storage', e => { if (e.key === 'asr.settings' && e.newValue) { try { Object.assign(S, JSON.parse(e.newValue)); if (current === 'settings') fillSettings(); } catch (err) {} } });
 async function showClipInfo() {
   const st = await clipStats();
   $('clipInfo').textContent = !st ? '這個瀏覽器無法存檔（例如無痕模式）。' : st.n ? `已存 ${st.n} 句，約 ${(st.bytes / 1048576).toFixed(1)} MB` : '還沒有存檔。';
@@ -283,11 +319,11 @@ function readForm() {
   const e = document.querySelector('input[name=engine]:checked'); S.engine = e ? e.value : 'browser';
   const rv = document.querySelector('input[name=reveal]:checked'); S.reveal = rv ? rv.value : 'sentence';
   S.key = $('keyIn').value.trim(); S.model = $('modelIn').value.trim() || 'google/gemini-3.8-flash-tts'; S.gvoice = $('gvoiceIn').value.trim(); S.style = $('styleIn').value;
-  S.voiceURI = $('voiceSel').value; S.rate = +$('rateIn').value; S.pitch = +$('pitchIn').value;
+  S.voiceURI = $('voiceSel').value; S.rate = +$('rateIn').value; S.pitch = +$('pitchIn').value; S.orate = +$('orateIn').value;
+  S.wake = $('wakeIn').checked;
   store.set('asr.settings', S);
 }
-$('rateIn').oninput = () => { $('rateOut').textContent = (+$('rateIn').value).toFixed(2); };
-$('pitchIn').oninput = () => { $('pitchOut').textContent = (+$('pitchIn').value).toFixed(2); };
+$('ambVol2').oninput = () => setAmbVol(+$('ambVol2').value);
 let testAudio = null;
 $('testBtn').onclick = () => {
   readForm(); const v = pickVoice(), st = $('setStatus');
@@ -295,7 +331,7 @@ $('testBtn').onclick = () => {
     if (!S.key) { st.textContent = '還沒填 OpenRouter 金鑰。'; return; }
     st.textContent = '正在產生試聽…';
     if (testAudio) testAudio.pause();
-    synth(applyGL('夜已經深了。劇院的燈還亮著，可是那裡，應該空無一人。', 'speech')).then(url => { if (testAudio) testAudio.pause(); testAudio = new Audio(url); testAudio.play().catch(() => {}); st.textContent = `播放中：${S.model}${S.gvoice ? ' · ' + S.gvoice : ''}`; showClipInfo(); })
+    synth(applyGL('夜已經深了。劇院的燈還亮著，可是那裡，應該空無一人。', 'speech')).then(url => { if (testAudio) testAudio.pause(); testAudio = new Audio(url); setRate(testAudio); testAudio.play().catch(() => {}); st.textContent = `播放中：${S.model}${S.gvoice ? ' · ' + S.gvoice : ''}`; showClipInfo(); })
       .catch(err => { st.textContent = `試聽失敗：${err.message}`; });
     return;
   }
@@ -307,38 +343,48 @@ $('testBtn').onclick = () => {
   st.textContent = `試聽中：${v.name}`;
 };
 $('saveBtn').onclick = () => { if (testAudio) testAudio.pause(); readForm(); back(); };
-// 實測可用的組合：[顯示名稱, 模型, 聲音, 相對 Gemini Flash 的價格]
-const TTS_PRESETS = [
-  ['MiniMax 有聲書男聲', 'minimax/speech-2.8-turbo', 'audiobook_male_1', '136%'],
-  ['MiniMax 男播音員', 'minimax/speech-2.8-turbo', 'Chinese (Mandarin)_Male_Announcer', '136%'],
-  ['MiniMax 電台主持', 'minimax/speech-2.8-turbo', 'Chinese (Mandarin)_Radio_Host', '136%'],
-  ['Gemini Flash', 'google/gemini-3.8-flash-tts', 'Charon', '100%'],
-  ['Gemini Flash Lite', 'google/gemini-3.8-flash-lite-tts', 'Charon', '66%'],
-  ['Fish Audio 女聲', 'fish-audio/s2.1-pro', '', '54%'],
-  ['Qwen 男聲', 'qwen/qwen-audio-3.0-tts-flash', 'loongjohn', '34%'],
-  ['Qwen 女聲', 'qwen/qwen-audio-3.0-tts-flash', 'longanhuan_v3.6', '34%'],
-  ['MAI 雲哲', 'microsoft/mai-voice-2.1-flash', 'zh-TW-YunJheNeural', '18%'],
-  ['MAI 曉臻', 'microsoft/mai-voice-2.1-flash', 'zh-TW-HsiaoChenNeural', '18%'],
-  ['Kokoro', 'hexgrad/kokoro-82m', 'zm_yunjian', '1%'],
+// 改語速時拿已經試聽過的那段直接換速度，不用重新產生
+$('orateIn').addEventListener('change', () => { if (testAudio) { setRate(testAudio); testAudio.currentTime = 0; testAudio.play().catch(() => {}); } });
+// 線上語音：[顯示名稱, 模型, 相對 Gemini Flash 的價格, [[聲音, 說明, 候選?], …]]
+// 候選（第三欄是 1）是原廠公布的聲音名稱，透過 OpenRouter 能不能用、念中文好不好聽還沒試過
+const GEMINI_VOICES = [['Charon', '男聲'], ['Kore', '女聲', 1], ['Aoede', '女聲', 1], ['Leda', '女聲', 1], ['Puck', '男聲', 1], ['Fenrir', '男聲', 1], ['Orus', '男聲', 1]];
+const TTS_MODELS = [
+  ['MiniMax', 'minimax/speech-2.8-turbo', '136%', [['audiobook_male_1', '有聲書男聲'], ['Chinese (Mandarin)_Male_Announcer', '男播音員'], ['Chinese (Mandarin)_Radio_Host', '電台主持'], ['audiobook_female_1', '有聲書女聲', 1]]],
+  ['Gemini Flash', 'google/gemini-3.8-flash-tts', '100%', GEMINI_VOICES],
+  ['Gemini Flash Lite', 'google/gemini-3.8-flash-lite-tts', '66%', GEMINI_VOICES],
+  ['Fish Audio', 'fish-audio/s2.1-pro', '54%', [['', '女聲']]],
+  ['Qwen', 'qwen/qwen-audio-3.0-tts-flash', '34%', [['loongjohn', '男聲'], ['longanhuan_v3.6', '女聲']]],
+  ['MAI（微軟，台灣口音）', 'microsoft/mai-voice-2.1-flash', '18%', [['zh-TW-YunJheNeural', '雲哲・男聲'], ['zh-TW-HsiaoChenNeural', '曉臻・女聲'], ['zh-TW-HsiaoYuNeural', '曉雨・女聲', 1]]],
+  ['Kokoro', 'hexgrad/kokoro-82m', '1%', [['zm_yunjian', '男聲'], ['zf_xiaobei', '女聲', 1], ['zf_xiaoni', '女聲', 1]]],
   // Fish Audio 的聲音是它公開聲音庫裡的編號（社群上傳），這三個是標籤為男聲的旁白型聲音
-  ['Fish 免費・台灣男聲', 'fish-audio/s2.1-pro-free:free', 'f4e4280e229b4feba6017a2ffb66149e', '免費'],
-  ['Fish 免費・懸疑男聲', 'fish-audio/s2.1-pro-free:free', 'ef53c4d18a5d46428cf90d2e971c82d8', '免費'],
-  ['Fish 免費・渾厚男聲', 'fish-audio/s2.1-pro-free:free', 'dd43b30d04d9446a94ebe41f301229b5', '免費'],
-  ['Fish 免費・女聲', 'fish-audio/s2.1-pro-free:free', '', '免費']
+  ['Fish Audio 免費', 'fish-audio/s2.1-pro-free:free', '免費', [['f4e4280e229b4feba6017a2ffb66149e', '台灣男聲'], ['ef53c4d18a5d46428cf90d2e971c82d8', '懸疑男聲'], ['dd43b30d04d9446a94ebe41f301229b5', '渾厚男聲'], ['', '女聲']]]
 ];
-TTS_PRESETS.forEach(([name, , , price], i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${name}（${price}）`; $('presetSel').append(o); });
-{ const o = document.createElement('option'); o.value = 'custom'; o.textContent = '自訂（自己填模型代號）'; $('presetSel').append(o); }
-// 讓下拉選單反映目前欄位裡的模型和聲音；對不上任何一組就是自訂
-function syncPreset() {
-  const i = TTS_PRESETS.findIndex(([, model, voice]) => model === $('modelIn').value.trim() && voice === $('gvoiceIn').value.trim());
-  $('presetSel').value = i < 0 ? 'custom' : i; $('customVoice').hidden = i >= 0;
+TTS_MODELS.forEach(([name, , price], i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${name}（${price}）`; $('modelSel').append(o); });
+{ const o = document.createElement('option'); o.value = 'custom'; o.textContent = '自訂（自己填模型代號）'; $('modelSel').append(o); }
+const voiceLabel = ([v, desc]) => /^[A-Za-z]{2,10}$/.test(v) ? `${desc} · ${v}` : desc;
+// 讓兩個下拉選單反映目前欄位裡的模型和聲音；模型不在清單裡就是自訂
+function syncModel() {
+  const model = $('modelIn').value.trim(), voice = $('gvoiceIn').value.trim(), i = TTS_MODELS.findIndex(m => m[1] === model);
+  $('modelSel').value = i < 0 ? 'custom' : i; $('customVoice').hidden = i >= 0; $('voiceRow').hidden = i < 0;
+  if (i < 0) return;
+  const sel = $('onVoiceSel'); sel.replaceChildren();
+  const voices = TTS_MODELS[i][3], add = (parent, v) => { const o = document.createElement('option'); o.value = v[0]; o.textContent = voiceLabel(v); parent.append(o); };
+  voices.filter(v => !v[2]).forEach(v => add(sel, v));
+  const cands = voices.filter(v => v[2]);
+  if (cands.length) { const g = document.createElement('optgroup'); g.label = '候選（還沒試過）'; cands.forEach(v => add(g, v)); sel.append(g); }
+  if (!voices.some(v => v[0] === voice)) add(sel, [voice, `目前：${voice || '（預設）'}`]);
+  sel.value = voice;
 }
-$('presetSel').onchange = () => {
-  const p = TTS_PRESETS[$('presetSel').value];
-  $('customVoice').hidden = !!p; if (!p) return;
-  document.querySelector('input[name=engine][value=openrouter]').checked = true; syncEngine();
-  $('modelIn').value = p[1]; $('gvoiceIn').value = p[2]; $('testBtn').click();
+const pickVoiceTest = () => { document.querySelector('input[name=engine][value=openrouter]').checked = true; readForm(); syncEngine(); $('testBtn').click(); };
+$('modelSel').onchange = () => {
+  const m = TTS_MODELS[$('modelSel').value];
+  if (!m) { $('customVoice').hidden = false; $('voiceRow').hidden = true; return; }
+  // 換模型時，新模型有同名的聲音就沿用，沒有就用它的第一個
+  const keep = m[3].find(v => v[0] === $('gvoiceIn').value.trim());
+  $('modelIn').value = m[1]; $('gvoiceIn').value = (keep || m[3][0])[0]; syncModel(); pickVoiceTest();
 };
+$('onVoiceSel').onchange = () => { $('gvoiceIn').value = $('onVoiceSel').value; pickVoiceTest(); };
+$('modelIn').addEventListener('change', syncModel);
 
 /* ---------- saves screen ---------- */
 function renderSaves() {

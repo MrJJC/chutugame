@@ -3,15 +3,16 @@
 $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').setAttribute('aria-pressed', auto); };
 $('menuBtn').onclick = () => { $('ambVol').value = S.ambVol == null ? .5 : S.ambVol; $('playMenu').showModal(); };
 $('ambVol').oninput = () => setAmbVol(+$('ambVol').value);
+$('prepBtn').onclick = () => { if (PREP.running && PREP.sc === CUR.id) { PREP.stop = true; renderPrep(); } else prepVoices(); };
 $('playMenuClose').onclick = () => $('playMenu').close();
 $('playMenu').addEventListener('click', e => { if (e.target === $('playMenu')) $('playMenu').close(); });
-// 背景音預設開；開關的狀態會記住
-const ambWanted = () => S.ambOn !== false;
-$('soundBtn').setAttribute('aria-pressed', ambWanted());
-$('soundBtn').onclick = () => {
-  S.ambOn = !ambWanted(); store.set('asr.settings', S); $('soundBtn').setAttribute('aria-pressed', S.ambOn);
-  if (S.ambOn) startAmb(); else stopAmb();
-};
+// 背景音每次打開網頁都是關的；按喇叭打開後所有畫面都播，再按一次才停（首頁和遊戲畫面各有一個開關）
+function setAmb(on) {
+  ambOn = on;
+  if (on) { ensureCtx(); startAmb(); } else stopAmb();
+  document.querySelectorAll('.amb-toggle').forEach(b => b.setAttribute('aria-pressed', on));
+}
+document.querySelectorAll('.amb-toggle').forEach(b => { b.onclick = () => setAmb(!ambOn); });
 // 點語音圖示是播放／暫停；點文字其他地方還是「跳過這一段」，所以不讓點擊往外傳
 $('vico').addEventListener('click', e => { e.stopPropagation(); togglePause(); });
 $('vico').addEventListener('keydown', e => e.stopPropagation());
@@ -28,7 +29,7 @@ $('resPick').addEventListener('click', e => { if (e.target === $('resPick')) $('
 /* ---------- 啟動 ----------
    劇本整理好後存一份在這台裝置：下次打開直接用存的那份（馬上看得到關卡），同時在背景抓新的，下次生效。
    REAL 或讀取程式改過就把 CACHE_VER 加一，舊的存檔會作廢重抓。 */
-const CACHE_VER = 1;
+const CACHE_VER = 2;
 const cacheSig = () => CACHE_VER + '|' + JSON.stringify(REAL);
 function enter() {
   $('loadMsg').hidden = true; $('loadBtns').hidden = true; $('skeleton').hidden = true;
