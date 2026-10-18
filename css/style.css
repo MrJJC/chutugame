@@ -24,7 +24,8 @@ body{padding-top:env(safe-area-inset-top,0px);overscroll-behavior-y:none}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease),background-color .15s,border-color .15s,color .15s,opacity .15s}
 button:active{transform:scale(.97)}
-:focus-visible{outline:2px solid var(--brass-hi);outline-offset:3px}
+/* 鍵盤操作時的外框：淡淡的亮色，不用黃色（實心黃按鈕外面再一圈黃框很難看） */
+:focus-visible{outline:2px solid rgba(237,225,195,.55);outline-offset:3px}
 #app{position:relative;max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
 .backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;background:#080A08 url(../images/bg1.jpg) center bottom/cover no-repeat}
 /* 暗幕：壓在圖上讓字看得清楚。圖本身上面三分之二就很暗，所以上輕下重，把城市那一段壓下去一些 */
@@ -71,13 +72,14 @@ body[data-mode="menu"] .screen{padding-bottom:calc(var(--tabbar) + var(--safe-b)
 .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 26px 40px;text-align:center}
 h2{font-family:var(--display);font-weight:700}
 
-.btn{min-height:52px;padding:0 22px;background:transparent;border:1px solid var(--brass);border-radius:var(--r);color:var(--brass-hi);letter-spacing:.06em;font-size:16px;font-weight:500}
-.btn:active{background:rgba(201,165,58,.12)}
+/* 按鈕：一個畫面只有主要的那個是實心黃色（.solid）；其他是深色方塊、沒有黃框，避免框裡又有框 */
+.btn{min-height:52px;padding:0 22px;background:var(--raise2);border:1px solid transparent;border-radius:var(--r);color:var(--ink);letter-spacing:.06em;font-size:16px;font-weight:500}
+.btn:active{background:#2F362F}
 .btn.solid{background:var(--brass-hi);border-color:var(--brass-hi);color:#1B1509;font-weight:700}
 .btn.solid:active{background:var(--brass)}
-.btn.blood{border-color:var(--blood);color:var(--blood-hi)}
+.btn.blood{color:var(--blood-hi)}
 .btn.blood.solid{background:var(--blood);border-color:var(--blood);color:#FBEEE0}
-.btn.verd{border-color:var(--verdigris);color:var(--verdigris-hi)}
+.btn.verd{color:var(--verdigris-hi)}
 .btn.verd.solid{background:var(--verdigris);border-color:var(--verdigris);color:#F2FBF6}
 .small-btn{min-height:44px;padding:0 16px;background:var(--raise);border:1px solid var(--line);border-radius:var(--r);color:var(--ink);font-size:15px}
 .small-btn:active{background:var(--raise2)}
@@ -209,7 +211,7 @@ h2{font-family:var(--display);font-weight:700}
 .deck .flavor{margin:0;padding:14px 16px 6px;font-size:16px;line-height:1.85;color:var(--paper-ink)}
 .deck .flavor:empty{padding:4px}
 .deck .row{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px 12px}
-.deck .btn{min-height:48px;font-size:15px}
+.deck .btn{min-height:48px;font-size:15px;background:transparent}
 .deck .btn.blood{border-color:var(--blood);color:var(--blood)}
 .deck .btn.verd{border-color:#2F6B5A;color:#2F6B5A}
 .deck .btn.blood.solid{background:var(--blood);color:#FBEEE0}
@@ -237,7 +239,7 @@ h2{font-family:var(--display);font-weight:700}
 .loc.add{display:block;min-height:52px;background:transparent;border:1px dashed var(--line);color:var(--muted);text-align:center;font-size:15px}
 .loc.flip{animation:cardOut .28s ease-out forwards;pointer-events:none}
 /* 牌桌上的朗讀面板：從底部滑上來，蓋住下半部，上面的卡和地點還看得到。朗讀頁的元件念的時候搬進來 */
-.npanel{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0 auto;max-width:560px;max-height:52vh;display:flex;flex-direction:column;background:#121613;border-top:2px solid var(--brass);border-radius:20px 20px 0 0;box-shadow:0 -12px 30px rgba(0,0,0,.55);animation:sheetUp .26s var(--ease)}
+.npanel{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0 auto;max-width:560px;max-height:52vh;display:flex;flex-direction:column;background:#121613;border-top:1px solid rgba(201,165,58,.35);border-radius:20px 20px 0 0;box-shadow:0 -12px 30px rgba(0,0,0,.55);animation:sheetUp .26s var(--ease)}
 .npanel[hidden]{display:none}
 .np-close{position:absolute;top:6px;right:8px;z-index:2}
 .np-body{display:flex;flex-direction:column;min-height:0;overflow-y:auto;padding:14px 0 calc(8px + var(--safe-b))}
@@ -333,7 +335,7 @@ mark{background:transparent;color:inherit;border-bottom:1px dashed var(--brass-h
 mark.hit{background:rgba(201,165,58,.4);border-bottom:0;color:#fff}
 
 /* ---------- 對話框：從底部滑上來 ---------- */
-dialog{position:fixed;inset:auto 0 0 0;margin:0 auto;width:100%;max-width:560px;max-height:86vh;overflow-y:auto;background:var(--raise);color:var(--ink);border:0;border-top:2px solid var(--brass);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + var(--safe-b))}
+dialog{position:fixed;inset:auto 0 0 0;margin:0 auto;width:100%;max-width:560px;max-height:86vh;overflow-y:auto;background:var(--raise);color:var(--ink);border:0;border-top:1px solid rgba(201,165,58,.35);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + var(--safe-b))}
 dialog[open]{animation:sheetUp .26s var(--ease)}
 dialog::backdrop{background:rgba(0,0,0,.62);animation:fadeIn .2s}
 dialog p{margin:0 0 18px;font-size:17px;line-height:1.75}
@@ -364,6 +366,8 @@ dialog .acts{display:flex;flex-direction:column-reverse;align-items:stretch;gap:
 #sheetList.grid .btn:active{background:var(--brass-hi);color:#1B1509}
 #resList{margin-bottom:14px}
 #branchList .btn,#resList .btn{padding:12px 16px;letter-spacing:.03em;line-height:1.55;text-align:left}
+dialog .btn:not(.solid){background:#252C26}
+dialog .btn:not(.solid):active{background:#323A33}
 #toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + var(--safe-b) + 14px);transform:translateX(-50%);z-index:70;background:var(--raise2);border:1px solid var(--blood);border-radius:var(--r);color:var(--blood-hi);padding:12px 16px;font-size:15px;line-height:1.6;width:max-content;max-width:calc(100vw - 32px);display:none}
 #toast.on{display:block;animation:screenIn .2s var(--ease)}
 
@@ -380,7 +384,7 @@ dialog .acts{display:flex;flex-direction:column-reverse;align-items:stretch;gap:
 @media (min-width:1000px){
   #app,.tabbar,.game-foot{max-width:860px}
   .loc-list{grid-template-columns:1fr 1fr}
-  dialog{max-width:620px;inset:auto 0 24px 0;border-radius:20px;border:2px solid var(--brass)}
+  dialog{max-width:620px;inset:auto 0 24px 0;border-radius:20px;border:1px solid rgba(201,165,58,.35)}
   #scList{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
   #decks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start}
   /* 表單型的畫面整塊收窄置中（不要逐個元素置中：說明文字自己有 margin 設定，會對不齊） */
