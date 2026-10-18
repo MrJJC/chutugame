@@ -380,20 +380,49 @@ function flipLoc(i) {
   if (kinds <= 1) { revealLoc(i, u, false); return; }
   sheet('翻開後，看卡上的編號：', grp.slice().sort(byNum).map(l => ({ label: l.num, fn: () => revealLoc(i, l, false) })), true);
 }
+// 翻開這張地點時，卡面要求放進場的其他地點（「強制 - 在翻開前廳時：將放在一邊的2個前廳走廊門口隨機放置入場」）。
+// 回傳要照做的那幾句，以及要加進清單的地點 [{ code, n }]。只看「放置入場」這種效果，其他卡面效果不管
+function locSpawns(l) {
+  const names = [...new Set(CUR.locs.flatMap(x => [x.uname, x.name]))].filter(n => n && n !== l.name).sort((a, b) => b.length - a.length);
+  const lines = [], adds = [];
+  (l.text || '').split(/\n+/).forEach(line => {
+    const m = /將(.+?)放置入場/.exec(line); if (!m) return;
+    let part = m[1]; const found = [];
+    // 長的名字先比對，比完就塗掉，「前廳走廊門口」才不會又被算成「前廳」
+    names.forEach(n => { if (part.includes(n)) { found.push(n); part = part.split(n).join('　'); } });
+    if (!found.length) return;
+    lines.push(line.replace(/^強制\s*-\s*/, ''));
+    const num = found.length === 1 && /(\d+)\s*[張個]/.exec(m[1]), fromDeck = m[1].includes('牌堆頂');
+    found.forEach(n => {
+      const rep = CUR.locs.filter(x => x.uname === n).sort((a, b) => a.code.localeCompare(b.code))[0] || CUR.locs.find(x => x.name === n);
+      const want = num ? +num[1] : 1;
+      // 放在一邊的地點只有那幾張：清單上已經有的不再加；從牌堆頂抽的（蒼白面具的地下墓穴）每次都是新的
+      const have = fromDeck ? 0 : G.loc.filter(c => locOf(c.g).uname === rep.uname).length;
+      if (want > have) adds.push({ code: rep.code, n: want - have, name: rep.uname });
+    });
+  });
+  return { lines, adds };
+}
 // i = -1：用「＋ 新地點」加進來的（已經翻過來看到卡號，兩面一起念）。both：要不要也念未翻開面
 function revealLoc(i, l, both = true) {
   if (i >= 0 && G.loc[i].c) return;   // 翻卡的那一下又按了一次「翻開」：已經翻了，不要再翻一次
   G.history.push(snapOf());
   if (i < 0) { G.loc.push({ g: l.code, c: l.code }); i = G.loc.length - 1; } else G.loc[i].c = l.code;
+  // 卡面要求其他地點入場：直接加進清單（未翻開），面板列出那句指示提醒在桌上照做。回上一步會一起拿掉
+  const sp = locSpawns(l);
+  sp.adds.forEach(a => { for (let k = 0; k < a.n; k++) G.loc.push({ g: a.code, c: null }); });
+  const fx = [...sp.lines, ...sp.adds.map(a => `已把 ${a.n} 張「${a.name}」加進地點清單（未翻開）。`)];
   saveProgress('game');
   // 清單上那張在原地翻成卡面，同時在面板開始念
-  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, both, true); };
+  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, both, true, fx); };
   if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   el.classList.add('flip'); setTimeout(go, 280);
 }
 // quiet：剛翻開的那一下（卡已經在畫面上翻了，不用再跳提示）；點已翻開的卡「重念」卻沒字才提示
-function readLoc(l, both, quiet) {
+// fx：要照做的指示（翻開時其他地點入場），有的話面板停著等「收起」
+function readLoc(l, both, quiet, fx = []) {
   const items = locItems(l, both);
+  if (fx.length) { narrate(items, { panel: true, then: closePanel, title: `地點 ${l.num} · ${l.name}`, effects: fx, effectsTitle: `${l.name} 翻開：照卡面執行` }); return; }
   // 翻開面沒有文字（很常見，謝幕的後臺等）：卡照樣翻開，面板安靜收起，不要留著已經沒用的「翻開／先不翻開」
   if (!items.length) { closePanel(); if (!quiet) toast('這張地點卡沒有劇情文字'); return; }
   narrate(items, { panel: true, then: closePanel });

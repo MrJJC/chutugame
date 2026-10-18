@@ -29,7 +29,7 @@ $('resPick').addEventListener('click', e => { if (e.target === $('resPick')) $('
 /* ---------- 啟動 ----------
    劇本整理好後存一份在這台裝置：下次打開直接用存的那份（馬上看得到關卡），同時在背景抓新的，下次生效。
    REAL 或讀取程式改過就把 CACHE_VER 加一，舊的存檔會作廢重抓。 */
-const CACHE_VER = 2;
+const CACHE_VER = 3;
 const cacheSig = () => CACHE_VER + '|' + JSON.stringify(REAL);
 function enter() {
   $('loadMsg').hidden = true; $('loadBtns').hidden = true; $('skeleton').hidden = true;

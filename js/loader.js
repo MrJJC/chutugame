@@ -242,7 +242,7 @@ async function loadReal() {
       // 地點卡：ArkhamDB 的 name／flavor 是翻開面，back_name／back_flavor 是未翻開面。卡上印的編號是卡號去掉循環前綴
       const locs = story ? [] : en.filter(c => c.type_code === 'location' && sets.includes(c.encounter_code)).map(c => ({
         code: c.code, num: c.code.slice(2).replace(/^0+/, ''), name: side(c, 'name'), sub: clean((zhBy[c.code] || {}).subname || ''), flavor: side(c, 'flavor'),
-        uname: side(c, 'back_name') || side(c, 'name'), uflavor: side(c, 'back_flavor')
+        uname: side(c, 'back_name') || side(c, 'name'), uflavor: side(c, 'back_flavor'), text: side(c, 'text')
       }));
       // 開局擺在桌上的地點：劇本檔的擺放圖（只拿來決定清單一開始有哪些，不畫地圖）
       const layout = g.steps.find(s => s.type === 'location_setup' && !/set_aside/.test(s.id));
