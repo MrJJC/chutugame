@@ -176,9 +176,10 @@ function finishAll() {
   $('afterBtn').textContent = a.label || (P.panel ? '收起' : '繼續');
   // after.choices：念完讓玩家選（地點念完未翻開面：翻開／先不翻開），取代原本那一個按鈕
   const ch = $('afterChoices'), choices = a.choices || []; ch.replaceChildren(); $('afterBtn').hidden = !!choices.length;
-  choices.forEach(c => { const b = document.createElement('button'); b.className = 'btn' + (c.solid ? ' solid' : ''); b.textContent = c.label; b.onclick = () => { stopPlayback(); c.fn(); }; ch.append(b); });
+  // 主要的那個是實心按鈕，其他是沒有框的小字，畫面上只有一個黃色重點
+  choices.forEach(c => { const b = document.createElement('button'); b.className = c.solid ? 'btn solid' : 'text-btn'; b.textContent = c.label; b.onclick = () => { stopPlayback(); c.fn(); }; ch.append(b); });
   $('after').classList.add('on');
-  if (choices.length) { ch.firstChild.focus({ preventScroll: true }); return; }
+  if (choices.length) return;
   // 面板裡念完、沒有要照做的指示：自己收起來
   if (P.panel && fx.hidden) { const run = P.run, t = setTimeout(() => { if (run === P.run && panelOpen()) $('afterBtn').click(); }, 900); P.stopFns.push(() => clearTimeout(t)); return; }
   $('afterBtn').focus({ preventScroll: true });

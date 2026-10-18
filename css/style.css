@@ -182,7 +182,10 @@ h2{font-family:var(--display);font-weight:700}
 .after.on{display:flex;animation:screenIn .25s var(--ease)}
 .after .btn{width:100%;max-width:26em}
 .after .btn[hidden]{display:none}
-.after-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:26em}
+.after-choices{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;max-width:26em}
+.after-choices .btn{width:100%}
+.text-btn{min-height:44px;padding:0 18px;background:none;border:0;color:var(--muted);font-size:15px;letter-spacing:.06em}
+.text-btn:active{color:var(--ink);transform:none}
 .after-choices:empty{display:none}
 .effects{width:100%;max-width:26em;max-height:46vh;overflow-y:auto;background:rgba(25,30,26,.94);border-radius:var(--r);padding:16px 18px;text-align:left;font-size:15px;line-height:1.8;color:#D9CDAE}
 .effects[hidden]{display:none}
@@ -334,7 +337,8 @@ dialog{position:fixed;inset:auto 0 0 0;margin:0 auto;width:100%;max-width:560px;
 dialog[open]{animation:sheetUp .26s var(--ease)}
 dialog::backdrop{background:rgba(0,0,0,.62);animation:fadeIn .2s}
 dialog p{margin:0 0 18px;font-size:17px;line-height:1.75}
-dialog .acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
+/* 對話框底部：主要按鈕在上、取消／關閉是下面的灰色小字（不要框裡又一個框） */
+dialog .acts{display:flex;flex-direction:column-reverse;align-items:stretch;gap:2px}
 /* 遊玩中的選項：一列一項，開關在右邊 */
 .sheet-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:60px;padding:0 4px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--ink);font-size:17px;text-align:left}
 .sheet-row:active{transform:none;background:var(--raise2)}
@@ -354,9 +358,10 @@ dialog .acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px}
 #branchList,#resList,#sheetList{display:grid;gap:10px}
 #sheetList{margin-bottom:14px}
 #sheetList .btn{padding:12px 16px;letter-spacing:.03em;line-height:1.55;text-align:left}
-/* 選卡號：一排好幾個大方塊 */
+/* 選卡號：一排好幾個深色方塊，只有號碼是黃字，按下去才亮（不再是一格格黃框） */
 #sheetList.grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))}
-#sheetList.grid .btn{text-align:center;font-family:var(--fell);font-size:22px;padding:0}
+#sheetList.grid .btn{text-align:center;font-family:var(--fell);font-size:22px;padding:0;background:var(--raise2);border-color:transparent;color:var(--brass-hi)}
+#sheetList.grid .btn:active{background:var(--brass-hi);color:#1B1509}
 #resList{margin-bottom:14px}
 #branchList .btn,#resList .btn{padding:12px 16px;letter-spacing:.03em;line-height:1.55;text-align:left}
 #toast{position:fixed;left:50%;bottom:calc(var(--tabbar) + var(--safe-b) + 14px);transform:translateX(-50%);z-index:70;background:var(--raise2);border:1px solid var(--blood);border-radius:var(--r);color:var(--blood-hi);padding:12px 16px;font-size:15px;line-height:1.6;width:max-content;max-width:calc(100vw - 32px);display:none}
