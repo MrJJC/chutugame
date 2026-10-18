@@ -37,7 +37,8 @@ body[data-mode="menu"] .veil{background:linear-gradient(rgba(var(--scrim),.72) 0
 @keyframes screenIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes flipAway{to{transform:perspective(900px) rotateY(88deg) scale(.96);opacity:.2}}
+/* 推進／翻開時卡片單純淡出，不做翻轉變形 */
+@keyframes cardOut{to{opacity:0}}
 @keyframes shimmer{to{background-position:-200% 0}}
 
 /* ---------- 頂端列 ---------- */
@@ -185,8 +186,8 @@ h2{font-family:var(--display);font-weight:700}
 /* ---------- 遊戲：桌上的卡 ---------- */
 #game{padding:6px 16px calc(96px + var(--safe-b));gap:16px}
 #decks{display:contents}
-.deck{display:flex;flex-direction:column;background:var(--paper);color:var(--paper-ink);border-radius:14px;overflow:hidden;box-shadow:0 2px 0 #B9AC8E,0 14px 28px rgba(0,0,0,.5);transform-origin:left center}
-.deck.flip{animation:flipAway .42s ease-in forwards;pointer-events:none}
+.deck{display:flex;flex-direction:column;background:var(--paper);color:var(--paper-ink);border-radius:14px;overflow:hidden;box-shadow:0 2px 0 #B9AC8E,0 14px 28px rgba(0,0,0,.5)}
+.deck.flip{animation:cardOut .28s ease-out forwards;pointer-events:none}
 .deck .head{display:flex;align-items:center;gap:12px;padding:10px 16px;color:#FBEEE0}
 .deck.agenda .head{background:var(--blood)}
 .deck.act .head{background:var(--verdigris)}
@@ -214,7 +215,7 @@ h2{font-family:var(--display);font-weight:700}
 .locs[hidden]{display:none}
 .locs-head{font-size:13px;color:var(--muted);letter-spacing:.12em}
 .loc-list{display:grid;gap:8px}
-.loc{display:grid;grid-template-columns:2.6em minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 14px 8px 10px;border-radius:12px;text-align:left;transform-origin:left center}
+.loc{display:grid;grid-template-columns:2.6em minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 14px 8px 10px;border-radius:12px;text-align:left}
 .loc .no{font-family:var(--fell);font-size:20px;text-align:center}
 .loc .nm{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.04em;line-height:1.35}
 .loc .tag{font-size:13px;white-space:nowrap}
@@ -225,7 +226,7 @@ h2{font-family:var(--display);font-weight:700}
 .loc.face .no{color:var(--paper-dim)}
 .loc.face .tag{color:#2F6B5A;font-weight:500}
 .loc.add{display:block;min-height:52px;background:transparent;border:1px dashed var(--line);color:var(--muted);text-align:center;font-size:15px}
-.loc.flip{animation:flipAway .42s ease-in forwards;pointer-events:none}
+.loc.flip{animation:cardOut .28s ease-out forwards;pointer-events:none}
 /* 牌桌上的朗讀面板：從底部滑上來，蓋住下半部，上面的卡和地點還看得到。朗讀頁的元件念的時候搬進來 */
 .npanel{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0 auto;max-width:560px;max-height:52vh;display:flex;flex-direction:column;background:#121613;border-top:2px solid var(--brass);border-radius:20px 20px 0 0;box-shadow:0 -12px 30px rgba(0,0,0,.55);animation:sheetUp .26s var(--ease)}
 .npanel[hidden]{display:none}

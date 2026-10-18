@@ -192,7 +192,7 @@ function toGame() {
     // 確認後整張卡翻過去，再開始念背面
     adv.onclick = () => confirmThen(`確定推進${d.label}？翻過去就會看到下一張的內容。`, cls, () => {
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) { advance(k); return; }
-      el.classList.add('flip'); setTimeout(() => advance(k), 400);
+      el.classList.add('flip'); setTimeout(() => advance(k), 280);
     }, '翻開');
     box.append(el);
   });
@@ -382,7 +382,7 @@ function revealLoc(i, l) {
   // 清單上那張在原地翻成卡面，同時在面板開始念
   const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, true); };
   if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
-  el.classList.add('flip'); setTimeout(go, 400);
+  el.classList.add('flip'); setTimeout(go, 280);
 }
 function readLoc(l, both) {
   const items = locItems(l, both);
