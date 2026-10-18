@@ -196,7 +196,8 @@ h2{font-family:var(--display);font-weight:700}
 
 /* ---------- 遊戲：桌上的卡 ---------- */
 #game{padding:6px 16px calc(96px + var(--safe-b));gap:16px}
-#decks{display:contents}
+/* 密謀／場景卡一樣高（每一列都跟最高的那張一樣），按鈕對齊在底部 */
+#decks{display:grid;gap:16px;grid-auto-rows:1fr}
 .deck{display:flex;flex-direction:column;background:var(--paper);color:var(--paper-ink);border-radius:14px;overflow:hidden;box-shadow:0 2px 0 #B9AC8E,0 14px 28px rgba(0,0,0,.5)}
 .deck.flip{animation:cardOut .28s ease-out forwards;pointer-events:none}
 .deck .head{display:flex;align-items:center;gap:12px;padding:10px 16px;color:#FBEEE0}
@@ -227,7 +228,7 @@ h2{font-family:var(--display);font-weight:700}
 .ic-will{color:#8FA8DC}.ic-int{color:#D6A863}.ic-com{color:#D98579}.ic-agi{color:#86BF93}.ic-fail{color:var(--blood-hi)}.ic-sign{color:var(--brass-hi)}
 /* 米色卡面上用深一點的同色 */
 .deck .ic-will,.loc.face .ic-will{color:#3D5A94}.deck .ic-int,.loc.face .ic-int{color:#8A5A12}.deck .ic-com,.loc.face .ic-com{color:#9A3B30}.deck .ic-agi,.loc.face .ic-agi{color:#2F6B4A}.deck .ic-fail,.loc.face .ic-fail{color:#9A3B30}.deck .ic-sign,.loc.face .ic-sign{color:#8A6A10}
-.deck .row{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px 12px}
+.deck .row{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px 12px;margin-top:auto}
 .deck .btn{min-height:48px;font-size:15px;background:transparent}
 .deck .btn.blood{border-color:var(--blood);color:var(--blood)}
 .deck .btn.verd{border-color:#2F6B5A;color:#2F6B5A}
@@ -405,7 +406,8 @@ dialog .btn:not(.solid):active{background:#323A33}
   .loc-list{grid-template-columns:1fr 1fr}
   dialog{max-width:620px;inset:auto 0 24px 0;border-radius:20px;border:1px solid rgba(201,165,58,.35)}
   #scList{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
-  #decks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:start}
+  /* 並排的卡一樣高（有一張多了卡面效果也不會一高一低），按鈕對齊在底部 */
+  #decks{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;align-items:stretch}
   /* 表單型的畫面整塊收窄置中（不要逐個元素置中：說明文字自己有 margin 設定，會對不齊） */
   .screen.doc,.screen.lib{width:100%;max-width:656px;margin-left:auto;margin-right:auto}
   .passage{max-width:28em}
