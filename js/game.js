@@ -376,8 +376,8 @@ function renderLocs() {
   list.append(add);
 }
 // 點未翻開的地點：先念未翻開面（只是看看，不改任何東西），念完讓玩家決定翻開或先不翻開
-// 卡面效果的提示框：和那張卡一樣寬、左右對齊；密謀／場景卡從標頭下面展開，地點從卡的下面（放不下就上面）。
-// 小箭頭指著按的那個 ⓘ。點別的地方、捲動、換畫面就收起
+// 卡面效果的提示框：像一張小紙條，靠著卡片右邊、小箭頭指著 ⓘ；密謀／場景卡從標頭下面出現，地點從卡的下面（放不下就上面）。
+// 點別的地方、捲動、換畫面就收起
 const FX_KEY = /^(強制|顯示|啟示|目標|撤退|勝利|隱藏)\s*[-–—]\s*/;
 function showTip(anchor, title, text) {
   const tip = $('tip');
@@ -397,7 +397,7 @@ function showTip(anchor, title, text) {
   const z = parseFloat(getComputedStyle(document.body).zoom) || 1, vh = innerHeight / z;
   const box = (anchor.closest('.deck') || anchor.closest('.locw') || anchor).getBoundingClientRect();
   const head = anchor.closest('.head'), a = anchor.getBoundingClientRect();
-  const left = box.left / z, width = box.width / z;
+  const width = Math.min(290, box.width / z - 16), left = box.right / z - 8 - width;
   tip.style.left = left + 'px'; tip.style.width = width + 'px';
   tip.style.setProperty('--caret', (a.left + a.width / 2) / z - left + 'px');
   const th = tip.offsetHeight, below = (head ? head.getBoundingClientRect().bottom : box.bottom) / z + 8;
