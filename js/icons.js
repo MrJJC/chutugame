@@ -33,11 +33,13 @@ function icon(label) {
     : `<svg viewBox="0 0 24 24">${p}</svg>`;
   return el;
 }
-// 把「［行動］：抽 1 張」這種文字變成圖示＋文字，放進 el（文字內容不變，只是把符號畫出來）
+// 把「［行動］：抽 1 張」這種文字變成圖示＋文字，放進 el。圖示後面附小字名稱（技能的菱形裡已經有字，不再附）
 function fillFx(el, text) {
   el.replaceChildren();
   text.split(/(［[^］]+］)/).forEach(part => {
     const m = /^［([^］]+)］$/.exec(part), ic = m && icon(m[1]);
-    el.append(ic || document.createTextNode(part));
+    if (!ic) { el.append(document.createTextNode(part)); return; }
+    el.append(ic);
+    if (!IC_SKILL[m[1]]) { const l = document.createElement('span'); l.className = 'ic-l'; l.textContent = `(${m[1]})`; l.setAttribute('aria-hidden', 'true'); el.append(l); }
   });
 }
