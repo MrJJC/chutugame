@@ -211,13 +211,13 @@ h2{font-family:var(--display);font-weight:700}
 .deck .flavor{margin:0;padding:14px 16px 6px;font-family:var(--display);font-weight:500;font-size:16.5px;line-height:1.85;color:var(--paper-ink)}
 .deck .flavor:empty{padding:4px}
 /* 劇本文字是主角（明體、大字、深色）；卡面效果是輔助（黑體、小字、淡色，放在淡底小方框裡、標「卡面效果」） */
-.cardfx{margin:4px 14px 4px;padding:6px 12px 6px;background:rgba(43,34,25,.06);border-radius:8px;font-family:var(--body);font-size:13px;line-height:1.75;color:var(--paper-dim)}
-.cardfx::before{content:"卡面效果";display:block;margin-bottom:2px;font-size:11px;letter-spacing:.14em;opacity:.75}
-.cardfx p{margin:0 0 3px}
-.lfx{grid-column:2/-1;display:flex;flex-direction:column;gap:2px;margin-top:2px;padding-left:9px;border-left:1px solid currentColor;font-family:var(--body);font-size:12.5px;font-weight:400;line-height:1.7;letter-spacing:0}
-.lfx-line{opacity:.95}
-.loc.back .lfx{color:var(--muted);border-left-color:rgba(165,160,138,.35)}
-.loc.face .lfx{color:var(--paper-dim);border-left-color:rgba(102,89,71,.3)}
+.cardfx{margin:0 16px 2px;padding:4px 10px;background:rgba(43,34,25,.05);border-radius:6px;font-family:var(--body);font-size:12px;line-height:1.65;color:var(--paper-dim)}
+.cardfx::before{content:"卡面效果";display:block;font-size:10px;letter-spacing:.14em;opacity:.7}
+.cardfx p{margin:0 0 2px}
+/* 地點的效果：和整張卡同寬、名稱下面一條很淡的細線隔開，字小、顏色淡 */
+.lfx{grid-column:1/-1;display:flex;flex-direction:column;gap:1px;margin-top:4px;padding-top:5px;border-top:1px solid;font-family:var(--body);font-size:11.5px;font-weight:400;line-height:1.6;letter-spacing:0;opacity:.85}
+.loc.back .lfx{color:var(--muted);border-top-color:rgba(165,160,138,.18)}
+.loc.face .lfx{color:var(--paper-dim);border-top-color:rgba(102,89,71,.18)}
 /* 符號圖示：細線、尖角，像刻出來的；四種技能是菱形框加明體字 */
 .ic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .06em}
 .ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:square;stroke-linejoin:miter}
