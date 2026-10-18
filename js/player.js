@@ -170,7 +170,7 @@ function finishAll() {
   fx.replaceChildren();
   if (a.effects && a.effects.length) {
     const h = document.createElement('h3'); h.textContent = a.effectsTitle || '照卡面執行'; fx.append(h);
-    a.effects.forEach(line => { const p = document.createElement('p'); p.textContent = applyGL(line, 'display'); fx.append(p); });
+    a.effects.forEach(line => { const p = document.createElement('p'); fillFx(p, applyGL(line, 'display')); fx.append(p); });
     fx.hidden = false;
   } else fx.hidden = true;
   $('afterBtn').textContent = a.label || (P.panel ? '收起' : '繼續');

@@ -186,6 +186,8 @@ function toGame() {
     const q = s => el.querySelector(s), [read, adv] = el.querySelectorAll('button');
     q('.num').textContent = ROMAN[c.stage]; q('small').textContent = `${d.label} · ${c.stage} / ${maxStage(d.cards)}`;
     q('strong').textContent = applyGL(c.name, 'display'); q('.need').textContent = c.need; q('.flavor').textContent = applyGL(c.flavor, 'display');
+    // 卡面效果（設定打開才顯示）：放在劇情文字下面，小字
+    if (S.showFx && c.text) { const f = document.createElement('div'); f.className = 'cardfx'; c.text.split(/\n+/).forEach(line => { const p = document.createElement('p'); fillFx(p, applyGL(line, 'display')); f.append(p); }); q('.flavor').after(f); }
     read.classList.add(cls); read.textContent = '▶ 朗讀';
     read.onclick = () => { ensureCtx(); narrate(cardItems(c, d.label), { panel: true, then: closePanel }); };
     adv.classList.add(cls); adv.textContent = `推進${d.label}`;
@@ -360,6 +362,9 @@ function renderLocs() {
     if (l) { no.textContent = l.num; nm.textContent = locTitle(l); tag.textContent = '▶ 重念'; b.setAttribute('aria-label', `地點 ${l.num} ${locTitle(l)}，已翻開，重念`); }
     else { const u = locOf(cell.g); nm.textContent = applyGL(u.uname, 'display'); tag.textContent = '未翻開'; b.setAttribute('aria-label', `地點 ${u.uname}，未翻開`); }
     b.append(no, nm, tag);
+    // 卡面效果（設定打開才顯示）：翻開的列翻開面、未翻開的列未翻開面
+    const fxText = S.showFx && (l ? l.text : locOf(cell.g).utext);
+    if (fxText) { const f = document.createElement('span'); f.className = 'lfx'; fxText.split(/\n+/).forEach(line => { const p = document.createElement('span'); p.className = 'lfx-line'; fillFx(p, applyGL(line, 'display')); f.append(p); }); b.append(f); }
     b.onclick = () => { ensureCtx(); if (l) readLoc(l, false); else openLoc(i); };
     list.append(b);
   });

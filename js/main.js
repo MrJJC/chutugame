@@ -1,6 +1,13 @@
 'use strict';
 /* ---------- top bar + tab bar ---------- */
 $('autoBtn').onclick = () => { auto = !auto; $('autoBtn').setAttribute('aria-pressed', auto); };
+// 顯示卡面效果（輔助，預設關）：牌桌上的卡和地點用小字列出效果
+function setShowFx(on) {
+  S.showFx = on; store.set('asr.settings', S); $('fxBtn').setAttribute('aria-pressed', on);
+  if (current === 'game') { toGame(); }
+}
+$('fxBtn').setAttribute('aria-pressed', !!S.showFx);
+$('fxBtn').onclick = () => setShowFx(!S.showFx);
 $('menuBtn').onclick = () => { $('ambVol').value = S.ambVol == null ? .5 : S.ambVol; $('playMenu').showModal(); };
 $('ambVol').oninput = () => setAmbVol(+$('ambVol').value);
 $('prepBtn').onclick = () => { if (PREP.running && PREP.sc === CUR.id) { PREP.stop = true; renderPrep(); } else prepVoices(); };
@@ -29,7 +36,7 @@ $('resPick').addEventListener('click', e => { if (e.target === $('resPick')) $('
 /* ---------- 啟動 ----------
    劇本整理好後存一份在這台裝置：下次打開直接用存的那份（馬上看得到關卡），同時在背景抓新的，下次生效。
    REAL 或讀取程式改過就把 CACHE_VER 加一，舊的存檔會作廢重抓。 */
-const CACHE_VER = 3;
+const CACHE_VER = 4;
 const cacheSig = () => CACHE_VER + '|' + JSON.stringify(REAL);
 function enter() {
   $('loadMsg').hidden = true; $('loadBtns').hidden = true; $('skeleton').hidden = true;

@@ -29,6 +29,7 @@ js/loader.js    讀取：抓社群資料、解析 .po 翻譯、把戰役指南�
 js/state.js     狀態：朗讀設定、存檔、名詞替換（localStorage）
 js/ui.js        切換畫面（選單層／遊玩層）、標題列、提示訊息
 js/audio.js     聲音：裝置語音、Gemini（OpenRouter）、背景音
+js/icons.js     卡面效果裡的符號圖示（自己畫的，不是官方圖）
 js/player.js    播放：逐句／逐字朗讀與畫面同步
 js/game.js      畫面：選擇關卡、流程執行（朗讀／指示／提問）、牌疊推進、分支、結局
 js/panels.js    畫面：文本庫、名詞替換、朗讀設定、存檔與日誌

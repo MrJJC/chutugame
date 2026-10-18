@@ -210,6 +210,20 @@ h2{font-family:var(--display);font-weight:700}
 .deck .need:empty{display:none}
 .deck .flavor{margin:0;padding:14px 16px 6px;font-size:16px;line-height:1.85;color:var(--paper-ink)}
 .deck .flavor:empty{padding:4px}
+/* 卡面效果（輔助）：劇情文字下面的小字 */
+.cardfx{margin:0 16px;padding:8px 0 2px;border-top:1px dashed rgba(43,34,25,.25);font-size:13.5px;line-height:1.8;color:var(--paper-dim)}
+.cardfx p{margin:0 0 4px}
+.lfx{grid-column:2/-1;display:flex;flex-direction:column;gap:2px;font-family:var(--body);font-size:12.5px;font-weight:400;line-height:1.7;letter-spacing:0}
+.loc.back .lfx{color:var(--muted)}
+.loc.face .lfx{color:var(--paper-dim)}
+/* 符號圖示：細線、尖角，像刻出來的；四種技能是菱形框加明體字 */
+.ic{display:inline-block;width:1.25em;height:1.25em;vertical-align:-.28em;margin:0 .06em}
+.ic svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:square;stroke-linejoin:miter}
+.ic text{font-family:var(--display);font-size:10.5px;font-weight:700;fill:currentColor;stroke:none}
+.ic-will,.ic-int,.ic-com,.ic-agi{width:1.45em;height:1.45em;vertical-align:-.36em}
+.ic-will{color:#8FA8DC}.ic-int{color:#D6A863}.ic-com{color:#D98579}.ic-agi{color:#86BF93}.ic-fail{color:var(--blood-hi)}.ic-sign{color:var(--brass-hi)}
+/* 米色卡面上用深一點的同色 */
+.deck .ic-will,.loc.face .ic-will{color:#3D5A94}.deck .ic-int,.loc.face .ic-int{color:#8A5A12}.deck .ic-com,.loc.face .ic-com{color:#9A3B30}.deck .ic-agi,.loc.face .ic-agi{color:#2F6B4A}.deck .ic-fail,.loc.face .ic-fail{color:#9A3B30}.deck .ic-sign,.loc.face .ic-sign{color:#8A6A10}
 .deck .row{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px 12px}
 .deck .btn{min-height:48px;font-size:15px;background:transparent}
 .deck .btn.blood{border-color:var(--blood);color:var(--blood)}

@@ -254,7 +254,7 @@ function fillSettings() {
   $('keyIn').value = S.key || ''; $('modelIn').value = S.model; $('gvoiceIn').value = S.gvoice; $('styleIn').value = S.style;
   loadVoices();
   $('rateIn').value = S.rate; $('pitchIn').value = S.pitch; $('orateIn').value = S.orate || 1;
-  $('ambVol2').value = S.ambVol == null ? .5 : S.ambVol; $('wakeIn').checked = S.wake !== false; $('ambSceneIn').checked = S.ambScene !== false;
+  $('ambVol2').value = S.ambVol == null ? .5 : S.ambVol; $('wakeIn').checked = S.wake !== false; $('ambSceneIn').checked = S.ambScene !== false; $('fxIn').checked = !!S.showFx;
   showRanges();
   $('setStatus').textContent = voices.length ? '' : '這台裝置沒有中文語音，會改成只顯示文字。';
   syncModel(); showClipInfo(); syncEngine();
@@ -325,7 +325,7 @@ function readForm() {
   const rv = document.querySelector('input[name=reveal]:checked'); S.reveal = rv ? rv.value : 'sentence';
   S.key = $('keyIn').value.trim(); S.model = $('modelIn').value.trim() || 'google/gemini-3.8-flash-tts'; S.gvoice = $('gvoiceIn').value.trim(); S.style = $('styleIn').value;
   S.voiceURI = $('voiceSel').value; S.rate = +$('rateIn').value; S.pitch = +$('pitchIn').value; S.orate = +$('orateIn').value;
-  S.wake = $('wakeIn').checked; S.ambScene = $('ambSceneIn').checked;
+  S.wake = $('wakeIn').checked; S.ambScene = $('ambSceneIn').checked; S.showFx = $('fxIn').checked; $('fxBtn').setAttribute('aria-pressed', S.showFx);
   store.set('asr.settings', S);
 }
 $('ambVol2').oninput = () => setAmbVol(+$('ambVol2').value);
