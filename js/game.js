@@ -382,6 +382,7 @@ function flipLoc(i) {
 }
 // i = -1：用「＋ 新地點」加進來的（已經翻過來看到卡號，兩面一起念）。both：要不要也念未翻開面
 function revealLoc(i, l, both = true) {
+  if (i >= 0 && G.loc[i].c) return;   // 翻卡的那一下又按了一次「翻開」：已經翻了，不要再翻一次
   G.history.push(snapOf());
   if (i < 0) { G.loc.push({ g: l.code, c: l.code }); i = G.loc.length - 1; } else G.loc[i].c = l.code;
   saveProgress('game');
