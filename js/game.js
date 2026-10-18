@@ -376,21 +376,34 @@ function renderLocs() {
   list.append(add);
 }
 // 點未翻開的地點：先念未翻開面（只是看看，不改任何東西），念完讓玩家決定翻開或先不翻開
-// 卡面效果的小提示框：貼著按的那個 ⓘ 出現，點別的地方、捲動、換畫面就收起
+// 卡面效果的提示框：和那張卡一樣寬、左右對齊；密謀／場景卡從標頭下面展開，地點從卡的下面（放不下就上面）。
+// 小箭頭指著按的那個 ⓘ。點別的地方、捲動、換畫面就收起
+const FX_KEY = /^(強制|顯示|啟示|目標|撤退|勝利|隱藏)\s*[-–—]\s*/;
 function showTip(anchor, title, text) {
   const tip = $('tip');
   if (!tip.hidden && tip.dataset.for === title) { hideTip(); return; }
   tip.replaceChildren();
-  const h = document.createElement('div'); h.className = 'tip-h'; h.textContent = title; tip.append(h);
-  text.split(/\n+/).filter(Boolean).forEach(line => { const p = document.createElement('p'); fillFx(p, applyGL(line, 'display')); tip.append(p); });
+  const h = document.createElement('div'); h.className = 'tip-h';
+  const t = document.createElement('span'); t.className = 'tip-t'; t.textContent = title;
+  const k = document.createElement('span'); k.className = 'tip-k'; k.textContent = '卡面效果';
+  h.append(t, k); tip.append(h);
+  text.split(/\n+/).filter(Boolean).forEach(line => {
+    const p = document.createElement('p'); line = applyGL(line, 'display');
+    const m = FX_KEY.exec(line);
+    if (m) { const b = document.createElement('b'); b.textContent = m[1]; p.append(b); line = line.slice(m[0].length); }
+    const rest = document.createElement('span'); fillFx(rest, line); p.append(rest); tip.append(p);
+  });
   tip.dataset.for = title; tip.hidden = false;
-  // 放在 ⓘ 下面；底下放不下就放上面。左右不超出畫面
-  const r = anchor.getBoundingClientRect(), z = parseFloat(getComputedStyle(document.body).zoom) || 1, vw = innerWidth / z, vh = innerHeight / z;
-  const ar = { top: r.top / z, bottom: r.bottom / z, left: r.left / z, right: r.right / z };
-  const w = Math.min(320, vw - 24); tip.style.width = w + 'px';
-  tip.style.left = Math.max(12, Math.min(vw - w - 12, (ar.left + ar.right) / 2 - w / 2)) + 'px';
-  const th = tip.offsetHeight;
-  tip.style.top = (ar.bottom + 8 + th < vh - 8 ? ar.bottom + 8 : Math.max(8, ar.top - 8 - th)) + 'px';
+  const z = parseFloat(getComputedStyle(document.body).zoom) || 1, vh = innerHeight / z;
+  const box = (anchor.closest('.deck') || anchor.closest('.locw') || anchor).getBoundingClientRect();
+  const head = anchor.closest('.head'), a = anchor.getBoundingClientRect();
+  const left = box.left / z, width = box.width / z;
+  tip.style.left = left + 'px'; tip.style.width = width + 'px';
+  tip.style.setProperty('--caret', (a.left + a.width / 2) / z - left + 'px');
+  const th = tip.offsetHeight, below = (head ? head.getBoundingClientRect().bottom : box.bottom) / z + 8;
+  const up = !head && below + th > vh - 8;
+  tip.classList.toggle('up', up);
+  tip.style.top = (up ? Math.max(8, box.top / z - 8 - th) : below) + 'px';
 }
 function hideTip() { const tip = $('tip'); tip.hidden = true; tip.dataset.for = ''; }
 document.addEventListener('pointerdown', e => { if (!$('tip').hidden && !e.target.closest('#tip,.fx-i')) hideTip(); }, true);
