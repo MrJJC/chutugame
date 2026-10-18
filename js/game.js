@@ -186,8 +186,8 @@ function toGame() {
     const q = s => el.querySelector(s), [read, adv] = el.querySelectorAll('button');
     q('.num').textContent = ROMAN[c.stage]; q('small').textContent = `${d.label} · ${c.stage} / ${maxStage(d.cards)}`;
     q('strong').textContent = applyGL(c.name, 'display'); q('.need').textContent = c.need; q('.flavor').textContent = applyGL(c.flavor, 'display');
-    // 卡面效果（設定打開才顯示）：放在劇情文字下面，小字
-    if (S.showFx && c.text) { const f = document.createElement('div'); f.className = 'cardfx'; c.text.split(/\n+/).forEach(line => { const p = document.createElement('p'); fillFx(p, applyGL(line, 'display')); f.append(p); }); q('.flavor').after(f); }
+    // 卡面效果（設定打開才有）：卡片標頭右上角一個小 ⓘ（跟卡名同一列），點了才跳出提示，卡片大小不變
+    if (S.showFx && c.text) { const i = document.createElement('button'); i.className = 'fx-i'; i.setAttribute('aria-label', '卡面效果'); i.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg>'; i.onclick = e => { e.stopPropagation(); showTip(i, `${d.label} ${ROMAN[c.stage]} · ${applyGL(c.name, 'display')}`, c.text); }; q('.head').append(i); }
     read.classList.add(cls); read.textContent = '▶ 朗讀';
     read.onclick = () => { ensureCtx(); narrate(cardItems(c, d.label), { panel: true, then: closePanel }); };
     adv.classList.add(cls); adv.textContent = `推進${d.label}`;
@@ -362,17 +362,39 @@ function renderLocs() {
     if (l) { no.textContent = l.num; nm.textContent = locTitle(l); tag.textContent = '▶ 重念'; b.setAttribute('aria-label', `地點 ${l.num} ${locTitle(l)}，已翻開，重念`); }
     else { const u = locOf(cell.g); nm.textContent = applyGL(u.uname, 'display'); tag.textContent = '未翻開'; b.setAttribute('aria-label', `地點 ${u.uname}，未翻開`); }
     b.append(no, nm, tag);
-    // 卡面效果（設定打開才顯示）：翻開的列翻開面、未翻開的列未翻開面
-    const fxText = S.showFx && (l ? l.text : locOf(cell.g).utext);
-    if (fxText) { const f = document.createElement('span'); f.className = 'lfx'; fxText.split(/\n+/).forEach(line => { const p = document.createElement('span'); p.className = 'lfx-line'; fillFx(p, applyGL(line, 'display')); f.append(p); }); b.append(f); }
     b.onclick = () => { ensureCtx(); if (l) readLoc(l, false); else openLoc(i); };
-    list.append(b);
+    // 卡面效果（設定打開才有）：卡片右邊一個小 ⓘ，點了才跳出提示。翻開的看翻開面、未翻開的看未翻開面
+    const fxText = S.showFx && (l ? l.text : locOf(cell.g).utext);
+    if (!fxText) { list.append(b); return; }
+    const w = document.createElement('div'); w.className = 'locw';
+    const info = document.createElement('button'); info.className = 'fx-i loc-i'; info.setAttribute('aria-label', '卡面效果'); info.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg>';
+    info.onclick = e => { e.stopPropagation(); showTip(info, l ? `地點 ${l.num} · ${locTitle(l)}` : `地點 · ${applyGL(locOf(cell.g).uname, 'display')}（未翻開）`, fxText); };
+    w.append(b, info); list.append(w);
   });
   const add = document.createElement('button'); add.className = 'loc add'; add.textContent = '＋ 新地點';
   add.onclick = () => { ensureCtx(); sheet('翻開新進場的地點後，看卡上的編號：', CUR.locs.slice().sort(byNum).map(l => ({ label: l.num, fn: () => revealLoc(-1, l) })), true); };
   list.append(add);
 }
 // 點未翻開的地點：先念未翻開面（只是看看，不改任何東西），念完讓玩家決定翻開或先不翻開
+// 卡面效果的小提示框：貼著按的那個 ⓘ 出現，點別的地方、捲動、換畫面就收起
+function showTip(anchor, title, text) {
+  const tip = $('tip');
+  if (!tip.hidden && tip.dataset.for === title) { hideTip(); return; }
+  tip.replaceChildren();
+  const h = document.createElement('div'); h.className = 'tip-h'; h.textContent = title; tip.append(h);
+  text.split(/\n+/).filter(Boolean).forEach(line => { const p = document.createElement('p'); fillFx(p, applyGL(line, 'display')); tip.append(p); });
+  tip.dataset.for = title; tip.hidden = false;
+  // 放在 ⓘ 下面；底下放不下就放上面。左右不超出畫面
+  const r = anchor.getBoundingClientRect(), z = parseFloat(getComputedStyle(document.body).zoom) || 1, vw = innerWidth / z, vh = innerHeight / z;
+  const ar = { top: r.top / z, bottom: r.bottom / z, left: r.left / z, right: r.right / z };
+  const w = Math.min(320, vw - 24); tip.style.width = w + 'px';
+  tip.style.left = Math.max(12, Math.min(vw - w - 12, (ar.left + ar.right) / 2 - w / 2)) + 'px';
+  const th = tip.offsetHeight;
+  tip.style.top = (ar.bottom + 8 + th < vh - 8 ? ar.bottom + 8 : Math.max(8, ar.top - 8 - th)) + 'px';
+}
+function hideTip() { const tip = $('tip'); tip.hidden = true; tip.dataset.for = ''; }
+document.addEventListener('pointerdown', e => { if (!$('tip').hidden && !e.target.closest('#tip,.fx-i')) hideTip(); }, true);
+window.addEventListener('scroll', () => { if (!$('tip').hidden) hideTip(); }, { passive: true });
 function openLoc(i) {
   const u = locOf(G.loc[i].g), title = `地點 · ${u.uname}`;
   narrate(chunks(u.uflavor).map(t => ({ text: t, label: title })), { panel: true, title,
