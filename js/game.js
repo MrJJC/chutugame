@@ -387,13 +387,15 @@ function revealLoc(i, l, both = true) {
   if (i < 0) { G.loc.push({ g: l.code, c: l.code }); i = G.loc.length - 1; } else G.loc[i].c = l.code;
   saveProgress('game');
   // 清單上那張在原地翻成卡面，同時在面板開始念
-  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, both); };
+  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, both, true); };
   if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   el.classList.add('flip'); setTimeout(go, 280);
 }
-function readLoc(l, both) {
+// quiet：剛翻開的那一下（卡已經在畫面上翻了，不用再跳提示）；點已翻開的卡「重念」卻沒字才提示
+function readLoc(l, both, quiet) {
   const items = locItems(l, both);
-  if (!items.length) { toast('這張地點卡沒有劇情文字'); return; }
+  // 翻開面沒有文字（很常見，謝幕的後臺等）：卡照樣翻開，面板安靜收起，不要留著已經沒用的「翻開／先不翻開」
+  if (!items.length) { closePanel(); if (!quiet) toast('這張地點卡沒有劇情文字'); return; }
   narrate(items, { panel: true, then: closePanel });
 }
 // 重新開始一關：清掉這關的進度（念到哪、翻過的卡和地點），回到標題畫面從開場重來。
