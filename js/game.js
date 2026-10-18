@@ -170,7 +170,7 @@ function pickStart(k) {
     cands.map(([c, j]) => ({ label: applyGL(c.name, 'display'), fn: () => { G.pos[k] = j; pickStart(k + 1); } })));
 }
 function toGame() {
-  stopPlayback(); where(`${CUR.cycle.name} · 進行中`, CUR.title);
+  closePanel(); stopPlayback(); where(`${CUR.cycle.name} · 進行中`, CUR.title);
   saveProgress('game');
   const box = $('decks'); box.replaceChildren();
   CUR.decks.forEach((d, k) => {
@@ -182,7 +182,7 @@ function toGame() {
     q('.num').textContent = ROMAN[c.stage]; q('small').textContent = `${d.label} · ${c.stage} / ${maxStage(d.cards)}`;
     q('strong').textContent = applyGL(c.name, 'display'); q('.need').textContent = c.need; q('.flavor').textContent = applyGL(c.flavor, 'display');
     read.classList.add(cls); read.textContent = '▶ 朗讀';
-    read.onclick = () => { ensureCtx(); narrate(cardItems(c, d.label), { label: '回到遊戲', then: toGame }); };
+    read.onclick = () => { ensureCtx(); narrate(cardItems(c, d.label), { panel: true, then: closePanel }); };
     adv.classList.add(cls); adv.textContent = `推進${d.label}`;
     // 確認後整張卡翻過去，再開始念背面
     adv.onclick = () => confirmThen(`確定推進${d.label}？翻過去就會看到下一張的內容。`, cls, () => {
@@ -247,7 +247,7 @@ function flipBack(k, idx, resume) {
   list.forEach((x, j) => { if (x.stage === c.stage + 1 && !groups.some(g => g.name === x.name)) groups.push({ name: x.name, j }); });
   if (groups.length > 1) {
     narrate(items, { effects, effectsTitle, label: '選擇翻到的下一張', ...track,
-      then: () => pickBranch(word, c, groups.map(g => [list[g.j], g.j]), j => { G.pos[k] = j; saveProgress('game'); narrate(cardItems(list[j], word), { label: '回到遊戲', then: toGame }); }) });
+      then: () => pickBranch(word, c, groups.map(g => [list[g.j], g.j]), j => { G.pos[k] = j; toGame(); narrate(cardItems(list[j], word), { panel: true, then: closePanel }); }) });
     return;
   }
   if (groups[0]) G.pos[k] = groups[0].j;
@@ -310,10 +310,10 @@ $('resBtn').onclick = () => {
   $('resPick').showModal();
 };
 $('resCancel').onclick = () => $('resPick').close();
-// 重聽：只列已經聽過的內容（照走過的分支念開場、每疊剛翻過的卡背、目前的卡）
+// 重聽：只列已經聽過的內容（照走過的分支念開場、每疊剛翻過的卡背、目前的卡）。都在牌桌上的面板念
 $('replayBtn').onclick = () => {
   ensureCtx();
-  const back = { label: '回到遊戲', then: toGame }, opts = [];
+  const back = { panel: true, then: closePanel }, opts = [];
   const intro = flowReads(CUR.flow, G.introAns).flatMap(t => chunks(t).map(x => ({ text: x, label: '開場' })));
   if (intro.length) opts.push({ label: '這關的開場', fn: () => narrate(intro, back) });
   CUR.decks.forEach((d, k) => {
@@ -373,14 +373,15 @@ function revealLoc(i, l) {
   G.history.push(snapOf());
   if (i < 0) { G.loc.push({ g: l.code, c: l.code }); i = G.loc.length - 1; } else G.loc[i].c = l.code;
   saveProgress('game');
-  const el = document.querySelector(`.loc[data-i="${i}"]`);
-  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) { readLoc(l, true); return; }
-  el.classList.add('flip'); setTimeout(() => readLoc(l, true), 400);
+  // 清單上那張在原地翻成卡面，同時在面板開始念
+  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, true); };
+  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
+  el.classList.add('flip'); setTimeout(go, 400);
 }
 function readLoc(l, both) {
   const items = locItems(l, both);
-  if (!items.length) { toast('這張地點卡沒有劇情文字'); toGame(); return; }
-  narrate(items, { label: '回到遊戲', then: toGame });
+  if (!items.length) { toast('這張地點卡沒有劇情文字'); return; }
+  narrate(items, { panel: true, then: closePanel });
 }
 $('titleTap').addEventListener('click', () => { ensureCtx(); startIntro(); });
 $('titleTap').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ensureCtx(); startIntro(); } });

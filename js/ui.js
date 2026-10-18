@@ -6,6 +6,7 @@ const PLAY_SCREENS = ['title', 'story', 'game'];
 const TAB_OF = { home: 'tabHome', saves: 'tabHome', library: 'textBtn', glossary: 'glossBtn', settings: 'tabSet' };
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  if (id !== 'game' && !$('npanel').hidden) placeNarration(false);
   current = id; window.scrollTo(0, 0);
   const play = PLAY_SCREENS.includes(id);
   document.body.dataset.mode = play ? 'play' : 'menu';

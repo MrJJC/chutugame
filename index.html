@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202610171930">
+<link rel="stylesheet" href="css/style.css?v=202610181200">
 </head>
 <body data-mode="menu">
 <div class="backdrop" aria-hidden="true"><i class="veil"></i></div>
@@ -79,6 +79,11 @@
       <button class="btn" id="undoBtn">回上一步</button>
       <button class="btn" id="replayBtn">重聽</button>
       <button class="btn" id="resBtn">進入結局</button>
+    </div>
+    <!-- 牌桌上的小段朗讀（地點、卡的正面、重聽）：朗讀頁的元件會搬進這裡，牌桌留在上面 -->
+    <div class="npanel" id="npanel" hidden>
+      <button class="icon-btn np-close" id="npClose" aria-label="收起"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <div class="np-body" id="npBody"></div>
     </div>
   </section>
 
@@ -223,15 +228,15 @@
   <div class="acts"><button class="btn" id="sheetCancel">取消</button></div></dialog>
 <div id="toast" role="alert"></div>
 
-<script src="js/config.js?v=202610171930"></script>
-<script src="js/sample.js?v=202610171930"></script>
-<script src="js/loader.js?v=202610171930"></script>
-<script src="js/state.js?v=202610171930"></script>
-<script src="js/ui.js?v=202610171930"></script>
-<script src="js/audio.js?v=202610171930"></script>
-<script src="js/player.js?v=202610171930"></script>
-<script src="js/game.js?v=202610171930"></script>
-<script src="js/panels.js?v=202610171930"></script>
-<script src="js/main.js?v=202610171930"></script>
+<script src="js/config.js?v=202610181200"></script>
+<script src="js/sample.js?v=202610181200"></script>
+<script src="js/loader.js?v=202610181200"></script>
+<script src="js/state.js?v=202610181200"></script>
+<script src="js/ui.js?v=202610181200"></script>
+<script src="js/audio.js?v=202610181200"></script>
+<script src="js/player.js?v=202610181200"></script>
+<script src="js/game.js?v=202610181200"></script>
+<script src="js/panels.js?v=202610181200"></script>
+<script src="js/main.js?v=202610181200"></script>
 </body>
 </html>

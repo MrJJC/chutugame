@@ -168,7 +168,11 @@ $('libReset').onclick = () => confirmThen('確定還原全部？你改過的段�
 }, '還原');
 const OVERLAYS = ['library', 'glossary', 'settings', 'story', 'saves'];
 function back() {
-  if (returnTo === 'story' && storyBack) { const b = storyBack; storyBack = null; narrate(b.list, { ...b.after, start: b.i }); return; }
+  if ((returnTo === 'story' || returnTo === 'game') && storyBack) {
+    const b = storyBack; storyBack = null;
+    if (returnTo === 'game') toGame();
+    narrate(b.list, { ...b.after, start: b.i }); return;
+  }
   if (returnTo === 'game') toGame(); else if (returnTo === 'library') openLibrary(true);
   else if (returnTo === 'home') toHome(); else toTitle();
 }
@@ -237,7 +241,8 @@ $('gDone').onclick = back;
 // 朗讀到一半進設定：記下那一段，按完成回去接著念
 let storyBack = null;
 function openSettings() {
-  if (current === 'story') { storyBack = { list: P.list.slice(), i: P.i, after: P.after }; returnTo = 'story'; }
+  storyBack = null;
+  if (current === 'story' || (current === 'game' && panelOpen())) { storyBack = { list: P.list.slice(), i: P.i, after: P.after }; returnTo = current; }
   else if (!OVERLAYS.includes(current) || current === 'library') returnTo = current;
   stopPlayback();
   fillSettings();

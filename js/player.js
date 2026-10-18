@@ -32,10 +32,22 @@ function stopPlayback() {
   if (window.speechSynthesis) speechSynthesis.cancel();
 }
 function setCount(i) { $('storyCount').textContent = `${i + 1} / ${P.list.length}`; $('storyBar').style.width = (i + 1) / P.list.length * 100 + '%'; }
+// 朗讀頁的元件（進度條、文字、念完後的方框和按鈕）。小段朗讀時整組搬進牌桌底部的面板，全螢幕時搬回來
+const storyParts = () => [document.querySelector('.story-prog'), $('storyTap'), $('after')];
+function placeNarration(panel) {
+  const box = panel ? $('npBody') : $('story');
+  storyParts().forEach(el => { if (el.parentNode !== box) box.append(el); });
+  $('npanel').hidden = !panel; document.body.classList.toggle('np-open', panel);
+}
+const panelOpen = () => !$('npanel').hidden;
+function closePanel() { if (panelOpen()) { stopPlayback(); placeNarration(false); } }
+// after.panel：在牌桌上用面板念（不換頁）；否則換到全螢幕的朗讀頁
 function narrate(list, after) {
   stopPlayback();
   P.list = list.filter(x => x.text); P.after = after; P.mute = !!(after && after.mute); P.started = false;
-  show('story'); $('after').classList.remove('on');
+  P.panel = !!(after && after.panel);
+  if (P.panel) placeNarration(true); else { placeNarration(false); show('story'); }
+  $('after').classList.remove('on');
   if (!P.list.length) {
     // 這一段只有指示、沒有要念的字：清掉上一段留在畫面上的文字
     ['storyLabel', 'storyCount', 'rest', 'under'].forEach(id => { $(id).textContent = ''; }); $('shown').replaceChildren(); $('storyBar').style.width = '100%';
@@ -160,8 +172,10 @@ function finishAll() {
     a.effects.forEach(line => { const p = document.createElement('p'); p.textContent = applyGL(line, 'display'); fx.append(p); });
     fx.hidden = false;
   } else fx.hidden = true;
-  $('afterBtn').textContent = a.label || '繼續';
+  $('afterBtn').textContent = a.label || (P.panel ? '收起' : '繼續');
   $('after').classList.add('on');
+  // 面板裡念完、沒有要照做的指示：自己收起來
+  if (P.panel && fx.hidden) { const run = P.run, t = setTimeout(() => { if (run === P.run && panelOpen()) $('afterBtn').click(); }, 900); P.stopFns.push(() => clearTimeout(t)); return; }
   $('afterBtn').focus({ preventScroll: true });
 }
 function storyTap() {
@@ -180,3 +194,4 @@ function storyTap() {
 $('storyTap').addEventListener('click', storyTap);
 $('storyTap').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); storyTap(); } });
 $('afterBtn').addEventListener('click', () => { stopPlayback(); const f = P.after && P.after.then; P.list = []; if (f) f(); });
+$('npClose').addEventListener('click', closePanel);
