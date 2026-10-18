@@ -51,6 +51,7 @@ function narrate(list, after) {
   if (!P.list.length) {
     // 這一段只有指示、沒有要念的字：清掉上一段留在畫面上的文字
     ['storyLabel', 'storyCount', 'rest', 'under'].forEach(id => { $(id).textContent = ''; }); $('shown').replaceChildren(); $('storyBar').style.width = '100%';
+    if (after && after.title) $('storyLabel').textContent = after.title;
     finishAll(); return;
   }
   // after.start：從第幾段開始（重開後接著念、從設定回來）
@@ -173,7 +174,11 @@ function finishAll() {
     fx.hidden = false;
   } else fx.hidden = true;
   $('afterBtn').textContent = a.label || (P.panel ? '收起' : '繼續');
+  // after.choices：念完讓玩家選（地點念完未翻開面：翻開／先不翻開），取代原本那一個按鈕
+  const ch = $('afterChoices'), choices = a.choices || []; ch.replaceChildren(); $('afterBtn').hidden = !!choices.length;
+  choices.forEach(c => { const b = document.createElement('button'); b.className = 'btn' + (c.solid ? ' solid' : ''); b.textContent = c.label; b.onclick = () => { stopPlayback(); c.fn(); }; ch.append(b); });
   $('after').classList.add('on');
+  if (choices.length) { ch.firstChild.focus({ preventScroll: true }); return; }
   // 面板裡念完、沒有要照做的指示：自己收起來
   if (P.panel && fx.hidden) { const run = P.run, t = setTimeout(() => { if (run === P.run && panelOpen()) $('afterBtn').click(); }, 900); P.stopFns.push(() => clearTimeout(t)); return; }
   $('afterBtn').focus({ preventScroll: true });

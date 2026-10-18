@@ -181,6 +181,9 @@ h2{font-family:var(--display);font-weight:700}
 .after{display:none;flex-direction:column;align-items:center;gap:14px;position:sticky;bottom:0;padding:28px 18px calc(18px + var(--safe-b));background:linear-gradient(rgba(var(--scrim),0),rgba(var(--scrim),.92) 30px)}
 .after.on{display:flex;animation:screenIn .25s var(--ease)}
 .after .btn{width:100%;max-width:26em}
+.after .btn[hidden]{display:none}
+.after-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:26em}
+.after-choices:empty{display:none}
 .effects{width:100%;max-width:26em;max-height:46vh;overflow-y:auto;background:rgba(25,30,26,.94);border-radius:var(--r);padding:16px 18px;text-align:left;font-size:15px;line-height:1.8;color:#D9CDAE}
 .effects[hidden]{display:none}
 .effects h3{margin:0 0 6px;font-family:var(--body);font-size:13px;font-weight:500;color:var(--brass-hi);letter-spacing:.06em}

@@ -367,20 +367,26 @@ function renderLocs() {
   add.onclick = () => { ensureCtx(); sheet('翻開新進場的地點後，看卡上的編號：', CUR.locs.slice().sort(byNum).map(l => ({ label: l.num, fn: () => revealLoc(-1, l) })), true); };
   list.append(add);
 }
+// 點未翻開的地點：先念未翻開面（只是看看，不改任何東西），念完讓玩家決定翻開或先不翻開
 function openLoc(i) {
-  const cell = G.loc[i], grp = locGroup(cell.g), u = locOf(cell.g), name = applyGL(u.uname, 'display');
-  // 翻開面念的內容都一樣的版本（蒙巴特爾等）不用問
-  const kinds = new Set(grp.map(l => [l.name, l.sub, l.flavor].join('|'))).size;
-  if (kinds <= 1) { sheet(`走進「${name}」？會翻開這張地點卡並朗讀。`, [{ label: '翻開並朗讀', solid: true, fn: () => revealLoc(i, u) }]); return; }
-  sheet(`走進「${name}」？翻開後，看卡上的編號：`, grp.slice().sort(byNum).map(l => ({ label: l.num, fn: () => revealLoc(i, l) })), true);
+  const u = locOf(G.loc[i].g), title = `地點 · ${u.uname}`;
+  narrate(chunks(u.uflavor).map(t => ({ text: t, label: title })), { panel: true, title,
+    choices: [{ label: '翻開', solid: true, fn: () => flipLoc(i) }, { label: '先不翻開', fn: closePanel }] });
 }
-// i = -1：用「＋ 新地點」加進來的
-function revealLoc(i, l) {
+// 翻開：同名的多個版本這時才看得到卡號，只列號碼讓玩家對照；翻開面念的內容都一樣的版本（蒙巴特爾等）不用問
+function flipLoc(i) {
+  const grp = locGroup(G.loc[i].g), u = locOf(G.loc[i].g);
+  const kinds = new Set(grp.map(l => [l.name, l.sub, l.flavor].join('|'))).size;
+  if (kinds <= 1) { revealLoc(i, u, false); return; }
+  sheet('翻開後，看卡上的編號：', grp.slice().sort(byNum).map(l => ({ label: l.num, fn: () => revealLoc(i, l, false) })), true);
+}
+// i = -1：用「＋ 新地點」加進來的（已經翻過來看到卡號，兩面一起念）。both：要不要也念未翻開面
+function revealLoc(i, l, both = true) {
   G.history.push(snapOf());
   if (i < 0) { G.loc.push({ g: l.code, c: l.code }); i = G.loc.length - 1; } else G.loc[i].c = l.code;
   saveProgress('game');
   // 清單上那張在原地翻成卡面，同時在面板開始念
-  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, true); };
+  const el = document.querySelector(`.loc[data-i="${i}"]`), go = () => { renderLocs(); readLoc(l, both); };
   if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) { go(); return; }
   el.classList.add('flip'); setTimeout(go, 280);
 }
