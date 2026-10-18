@@ -93,9 +93,13 @@ h2{font-family:var(--display);font-weight:700}
 .progbar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .progbar i{display:block;height:100%;width:0;background:var(--brass-hi);border-radius:2px;transition:width .4s var(--ease)}
 .resume{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:14px 18px;background:var(--brass-hi);border:0;border-radius:var(--r);color:#1B1509;text-align:left}
-.resume[hidden]{display:none}
-.restart-link{align-self:flex-start;min-height:44px;margin-top:-10px;padding:0 4px;background:none;border:0;color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px}
-.restart-link[hidden]{display:none}
+/* 繼續卡片右邊的小圖示：重新開始這關（不常用，所以只是一個小按鈕） */
+.resume-row{display:flex;align-items:stretch;border-radius:var(--r);overflow:hidden;background:var(--brass-hi)}
+.resume-row[hidden]{display:none}
+.resume-row .resume{flex:1;min-width:0;border-radius:0}
+.resume-restart{flex:none;width:52px;display:grid;place-items:center;background:transparent;border:0;border-left:1px solid rgba(27,21,9,.18);border-radius:0;color:#1B1509;opacity:.55}
+.resume-restart:active{background:var(--brass);opacity:1;transform:none}
+.resume-restart svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .resume:active{background:var(--brass)}
 .resume small{font-size:13px;opacity:.75}
 .resume strong{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.04em}

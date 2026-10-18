@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202610181600">
+<link rel="stylesheet" href="css/style.css?v=202610181700">
 </head>
 <body data-mode="menu">
 <div class="backdrop" aria-hidden="true"><i class="veil"></i></div>
@@ -29,8 +29,10 @@
       <p id="cycleProg" role="status">正在讀取劇本…</p>
       <div class="progbar"><i id="cycleBar"></i></div>
     </div>
-    <button class="resume" id="continueBtn" hidden><small>繼續上次的進度</small><strong id="continueText"></strong></button>
-    <button class="restart-link" id="restartHome" hidden>改成從頭開始這關</button>
+    <div class="resume-row" id="resumeRow" hidden>
+      <button class="resume" id="continueBtn"><small>繼續上次的進度</small><strong id="continueText"></strong></button>
+      <button class="resume-restart" id="restartHome" aria-label="重新開始這關" title="重新開始這關"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></button>
+    </div>
     <div class="tabs" id="cycleTabs" role="group" aria-label="循環" hidden></div>
     <div id="scList"></div>
     <div class="skeleton" id="skeleton" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -232,15 +234,15 @@
   <div class="acts"><button class="btn" id="sheetCancel">取消</button></div></dialog>
 <div id="toast" role="alert"></div>
 
-<script src="js/config.js?v=202610181600"></script>
-<script src="js/sample.js?v=202610181600"></script>
-<script src="js/loader.js?v=202610181600"></script>
-<script src="js/state.js?v=202610181600"></script>
-<script src="js/ui.js?v=202610181600"></script>
-<script src="js/audio.js?v=202610181600"></script>
-<script src="js/player.js?v=202610181600"></script>
-<script src="js/game.js?v=202610181600"></script>
-<script src="js/panels.js?v=202610181600"></script>
-<script src="js/main.js?v=202610181600"></script>
+<script src="js/config.js?v=202610181700"></script>
+<script src="js/sample.js?v=202610181700"></script>
+<script src="js/loader.js?v=202610181700"></script>
+<script src="js/state.js?v=202610181700"></script>
+<script src="js/ui.js?v=202610181700"></script>
+<script src="js/audio.js?v=202610181700"></script>
+<script src="js/player.js?v=202610181700"></script>
+<script src="js/game.js?v=202610181700"></script>
+<script src="js/panels.js?v=202610181700"></script>
+<script src="js/main.js?v=202610181700"></script>
 </body>
 </html>

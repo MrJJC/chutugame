@@ -34,8 +34,8 @@ function resume() {
 function renderHome() {
   const s = save();
   $('saveName').textContent = s.name;
-  const cb = $('continueBtn'), resumable = s.progress && findSc(s.progress.scenarioId);
-  cb.hidden = !resumable; $('restartHome').hidden = !resumable; if (resumable) $('continueText').textContent = progressText(s.progress);
+  const resumable = s.progress && findSc(s.progress.scenarioId);
+  $('resumeRow').hidden = !resumable; if (resumable) $('continueText').textContent = progressText(s.progress);
   if (!CYCLES.length) return;
   if (!homeCycle || !CYCLES.some(c => c.id === homeCycle)) homeCycle = CYCLES[0].id;
   const tabs = $('cycleTabs'); tabs.replaceChildren(); tabs.hidden = CYCLES.length < 2;
