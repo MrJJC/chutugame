@@ -1,4 +1,8 @@
 'use strict';
+/* 對話框打開時，瀏覽器會把焦點放到第一個選項上，iPhone 會在那一項畫外框（像「念完自動接下一段」被框起來）。
+   改成焦點放在對話框本身；用鍵盤時按 Tab 一樣能走到各個選項 */
+const showModal0 = HTMLDialogElement.prototype.showModal;
+HTMLDialogElement.prototype.showModal = function () { showModal0.call(this); this.focus({ preventScroll: true }); };
 /* ---------- screens ---------- */
 let current = 'title', returnTo = 'title';
 // 遊玩層（開場、朗讀、牌桌）顯示頂端列；其餘是選單層，顯示底部分頁

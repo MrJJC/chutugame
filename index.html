@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202610190000">
+<link rel="stylesheet" href="css/style.css?v=202610190100">
 </head>
 <body data-mode="menu">
 <div class="backdrop" aria-hidden="true"><i class="veil"></i></div>
@@ -211,39 +211,39 @@
   </nav>
 </div>
 
-<dialog id="playMenu" aria-label="朗讀選項">
+<dialog id="playMenu" tabindex="-1" aria-label="朗讀選項">
   <button class="sheet-row" id="autoBtn" aria-pressed="true"><span>念完自動接下一段</span><i class="switch"></i></button>
   <label class="sheet-row" for="ambVol"><span>背景音音量</span><input type="range" id="ambVol" min="0.1" max="1" step="0.05" aria-label="背景音音量"></label>
   <button class="sheet-row" id="qrOpen2"><span>帶到另一台裝置（QR Code）</span><span class="chev">›</span></button>
   <button class="sheet-row" id="restartBtn"><span>重新開始這關</span><span class="chev">›</span></button>
   <button class="sheet-row" id="gearBtn"><span>朗讀設定</span><span class="chev">›</span></button>
   <div class="acts"><button class="text-btn" id="playMenuClose">關閉</button></div></dialog>
-<dialog id="qrBox" aria-label="帶到另一台裝置">
+<dialog id="qrBox" tabindex="-1" aria-label="帶到另一台裝置">
   <p>用另一台裝置的相機掃描，打開網頁後確認匯入，就會從目前的進度繼續。</p>
   <div class="qr" id="qrImg" role="img" aria-label="QR Code"></div>
   <p class="note" id="qrNote"></p>
   <div class="acts"><button class="text-btn" id="qrClose">關閉</button></div></dialog>
-<dialog id="confirm"><p id="confirmText"></p>
+<dialog id="confirm" tabindex="-1"><p id="confirmText"></p>
   <div class="acts"><button class="text-btn" id="cNo">取消</button><button class="btn solid" id="cYes">推進</button></div></dialog>
-<dialog id="resPick"><p>卡面寫著「進入（→結局 N）」，或所有調查員都已撤退／被擊敗時，選擇對應的結局：</p>
+<dialog id="resPick" tabindex="-1"><p>卡面寫著「進入（→結局 N）」，或所有調查員都已撤退／被擊敗時，選擇對應的結局：</p>
   <div id="resList"></div>
   <div class="acts"><button class="text-btn" id="resCancel">取消</button></div></dialog>
-<dialog id="branchPick"><p id="branchText"></p>
+<dialog id="branchPick" tabindex="-1"><p id="branchText"></p>
   <div id="branchList"></div></dialog>
-<dialog id="sheetPick"><p id="sheetText"></p>
+<dialog id="sheetPick" tabindex="-1"><p id="sheetText"></p>
   <div id="sheetList"></div>
   <div class="acts"><button class="text-btn" id="sheetCancel">取消</button></div></dialog>
 <div id="toast" role="alert"></div>
 
-<script src="js/config.js?v=202610190000"></script>
-<script src="js/sample.js?v=202610190000"></script>
-<script src="js/loader.js?v=202610190000"></script>
-<script src="js/state.js?v=202610190000"></script>
-<script src="js/ui.js?v=202610190000"></script>
-<script src="js/audio.js?v=202610190000"></script>
-<script src="js/player.js?v=202610190000"></script>
-<script src="js/game.js?v=202610190000"></script>
-<script src="js/panels.js?v=202610190000"></script>
-<script src="js/main.js?v=202610190000"></script>
+<script src="js/config.js?v=202610190100"></script>
+<script src="js/sample.js?v=202610190100"></script>
+<script src="js/loader.js?v=202610190100"></script>
+<script src="js/state.js?v=202610190100"></script>
+<script src="js/ui.js?v=202610190100"></script>
+<script src="js/audio.js?v=202610190100"></script>
+<script src="js/player.js?v=202610190100"></script>
+<script src="js/game.js?v=202610190100"></script>
+<script src="js/panels.js?v=202610190100"></script>
+<script src="js/main.js?v=202610190100"></script>
 </body>
 </html>
