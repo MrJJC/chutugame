@@ -11,6 +11,7 @@ function show(id) {
   const play = PLAY_SCREENS.includes(id);
   document.body.dataset.mode = play ? 'play' : 'menu';
   wake(play);
+  if (!play) ambMood(null, 'menu');
   document.querySelectorAll('.tabbar button').forEach(b => { if (b.id === TAB_OF[id]) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
 }
 function where(a, b) { $('whereSmall').textContent = a; $('whereBig').textContent = b; }

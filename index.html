@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&family=IM+Fell+English+SC&display=swap">
-<link rel="stylesheet" href="css/style.css?v=202610181200">
+<link rel="stylesheet" href="css/style.css?v=202610181400">
 </head>
 <body data-mode="menu">
 <div class="backdrop" aria-hidden="true"><i class="veil"></i></div>
@@ -178,6 +178,8 @@
       <h3>背景音與螢幕</h3>
       <div class="range"><label for="ambVol2">音量</label><input type="range" id="ambVol2" min="0.1" max="1" step="0.05"><span></span></div>
       <p class="note">背景音用首頁或遊戲畫面上方的喇叭開關。iPhone／iPad 的靜音鍵撥到靜音時聽不到背景音。</p>
+      <label class="check"><input type="checkbox" id="ambSceneIn"> 背景音隨關卡與劇情變化</label>
+      <p class="note">每關有自己的氣氛（劇院、瘋人院、雨中的巴黎…），開場比較安靜，密謀越往後低音越沉，結局只剩低音慢慢淡出。關掉就一直是原本那一套。</p>
       <label class="check"><input type="checkbox" id="wakeIn"> 遊戲中保持螢幕常亮</label>
     </div>
     <div class="group">
@@ -228,15 +230,15 @@
   <div class="acts"><button class="btn" id="sheetCancel">取消</button></div></dialog>
 <div id="toast" role="alert"></div>
 
-<script src="js/config.js?v=202610181200"></script>
-<script src="js/sample.js?v=202610181200"></script>
-<script src="js/loader.js?v=202610181200"></script>
-<script src="js/state.js?v=202610181200"></script>
-<script src="js/ui.js?v=202610181200"></script>
-<script src="js/audio.js?v=202610181200"></script>
-<script src="js/player.js?v=202610181200"></script>
-<script src="js/game.js?v=202610181200"></script>
-<script src="js/panels.js?v=202610181200"></script>
-<script src="js/main.js?v=202610181200"></script>
+<script src="js/config.js?v=202610181400"></script>
+<script src="js/sample.js?v=202610181400"></script>
+<script src="js/loader.js?v=202610181400"></script>
+<script src="js/state.js?v=202610181400"></script>
+<script src="js/ui.js?v=202610181400"></script>
+<script src="js/audio.js?v=202610181400"></script>
+<script src="js/player.js?v=202610181400"></script>
+<script src="js/game.js?v=202610181400"></script>
+<script src="js/panels.js?v=202610181400"></script>
+<script src="js/main.js?v=202610181400"></script>
 </body>
 </html>

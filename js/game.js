@@ -78,8 +78,13 @@ const copySnap = h => ({ pos: h.pos.slice(), lastBack: h.lastBack ? h.lastBack.m
 // 「回上一步」用的快照：翻卡、翻開地點、加入地點前各存一份
 const snapOf = () => copySnap(G);
 const initLoc = sc => (sc.locStart || []).map(code => ({ g: code, c: null }));
+// 毀滅逼近的程度：各疊密謀走到第幾張（第一張 0，最後一張 1），取最深的那疊
+const doomOf = () => Math.max(0, ...CUR.decks.map((d, k) => {
+  const c = d.kind === 'agenda' && d.cards[G.pos[k]], m = maxStage(d.cards);
+  return c && m > 1 ? (c.stage - 1) / (m - 1) : 0;
+}));
 function toTitle() {
-  stopPlayback(); where(CUR.cycle.name, CUR.title);
+  stopPlayback(); where(CUR.cycle.name, CUR.title); ambMood(CUR, 'intro');
   $('titleSmall').textContent = CUR.tag || (CUR.kind === 'story' ? 'Interlude' : `Scenario ${CUR.code}`); $('titleBig').textContent = CUR.title;
   renderPrep();
   show('title');
@@ -148,7 +153,7 @@ function startIntro(resume) {
   const sc = CUR;
   if (!resume) { G.pos = sc.decks.map(d => { const s = deckStart(d); return s.length ? s[0][1] : -1; }); G.history = []; G.lastBack = sc.decks.map(() => null); G.loc = initLoc(sc); G.introAns = []; }
   const rec = { at: 'intro', answers: [], seg: 0, item: 0, n: 0 }, keep = () => saveProgress('intro', rec);
-  keep();
+  keep(); ambMood(sc, 'intro');
   where(`${sc.cycle.name} · 開場`, sc.title);
   if (sc.kind === 'story') {
     const lines = [];
@@ -170,7 +175,7 @@ function pickStart(k) {
     cands.map(([c, j]) => ({ label: applyGL(c.name, 'display'), fn: () => { G.pos[k] = j; pickStart(k + 1); } })));
 }
 function toGame() {
-  closePanel(); stopPlayback(); where(`${CUR.cycle.name} · 進行中`, CUR.title);
+  closePanel(); stopPlayback(); where(`${CUR.cycle.name} · 進行中`, CUR.title); ambMood(CUR, 'play', doomOf());
   saveProgress('game');
   const box = $('decks'); box.replaceChildren();
   CUR.decks.forEach((d, k) => {
@@ -225,6 +230,7 @@ function flipBack(k, idx, resume) {
   // 先記下翻卡前的狀態：念到一半重開時從這裡重來
   const rec = { at: 'back', k, idx, cs, pre: { ...snapOf(), history: G.history.map(copySnap) }, item: 0, n: 0 };
   G.history.push(snapOf()); G.lastBack[k] = { idx, cs };
+  if (d.kind === 'agenda') ambMood(CUR, 'play', doomOf() + 1 / Math.max(1, maxStage(list) - 1));
   const items = backItems(c, word, cs); rec.n = items.length;
   saveProgress('back', rec);
   const track = { start: Math.min(resume && resume.item || 0, Math.max(0, items.length - 1)), onItem: i => { rec.item = i; saveProgress('back', rec); } };
@@ -284,7 +290,7 @@ function pickBranch(word, from, cands, done) {
 function resolution(id, lines = [], resume) {
   const sc = CUR, r = sc.resolutions[id];
   const rec = { at: 'res', res: id, carry: lines.slice(), answers: [], seg: 0, item: 0, n: 0 }, keep = () => saveProgress('res', rec);
-  saveResult(sc, id, lines, true); keep();
+  saveResult(sc, id, lines, true); keep(); ambMood(sc, 'res');
   where(`${sc.cycle.name} · ${resLabel(id)}`, sc.title);
   const end = () => { clearProgress(sc); toHome(); };
   runFlow(r.flow, { label: resLabel(id), effectsTitle: '本關結算', doneLabel: '回到選擇關卡', track: rec, resume, save: keep, then: end,
