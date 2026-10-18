@@ -35,7 +35,7 @@ function renderHome() {
   const s = save();
   $('saveName').textContent = s.name;
   const cb = $('continueBtn'), resumable = s.progress && findSc(s.progress.scenarioId);
-  cb.hidden = !resumable; if (resumable) $('continueText').textContent = progressText(s.progress);
+  cb.hidden = !resumable; $('restartHome').hidden = !resumable; if (resumable) $('continueText').textContent = progressText(s.progress);
   if (!CYCLES.length) return;
   if (!homeCycle || !CYCLES.some(c => c.id === homeCycle)) homeCycle = CYCLES[0].id;
   const tabs = $('cycleTabs'); tabs.replaceChildren(); tabs.hidden = CYCLES.length < 2;
@@ -389,5 +389,14 @@ function readLoc(l, both) {
   if (!items.length) { toast('這張地點卡沒有劇情文字'); return; }
   narrate(items, { panel: true, then: closePanel });
 }
+// 重新開始一關：清掉這關的進度（念到哪、翻過的卡和地點），回到標題畫面從開場重來。
+// 完成過的結果和戰役日誌留著，重新打完這關才換成新的
+function restartScenario(sc) {
+  confirmThen(`確定重新開始「${sc.title}」？這關的進度和翻開過的地點會清掉，從開場重來。完成過的結果和戰役日誌會保留，重新打完才換成新的。`, 'blood', () => {
+    stopPlayback(); clearProgress(sc); CUR = sc; homeCycle = sc.cycle.id; store.set('asr.last', sc.id); toTitle();
+  }, '重新開始');
+}
+$('restartBtn').onclick = () => { $('playMenu').close(); if (CUR) restartScenario(CUR); };
+$('restartHome').onclick = () => { const p = save().progress, sc = p && findSc(p.scenarioId); if (sc) restartScenario(sc); };
 $('titleTap').addEventListener('click', () => { ensureCtx(); startIntro(); });
 $('titleTap').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ensureCtx(); startIntro(); } });

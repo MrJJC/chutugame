@@ -94,6 +94,8 @@ h2{font-family:var(--display);font-weight:700}
 .progbar i{display:block;height:100%;width:0;background:var(--brass-hi);border-radius:2px;transition:width .4s var(--ease)}
 .resume{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:14px 18px;background:var(--brass-hi);border:0;border-radius:var(--r);color:#1B1509;text-align:left}
 .resume[hidden]{display:none}
+.restart-link{align-self:flex-start;min-height:44px;margin-top:-10px;padding:0 4px;background:none;border:0;color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.restart-link[hidden]{display:none}
 .resume:active{background:var(--brass)}
 .resume small{font-size:13px;opacity:.75}
 .resume strong{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.04em}
