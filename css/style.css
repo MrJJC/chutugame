@@ -138,10 +138,13 @@ h2{font-family:var(--display);font-weight:700}
 .title-small{font-family:var(--fell);color:var(--brass-hi);letter-spacing:.24em;font-size:15px;margin:0 0 14px}
 .title-big{font-family:var(--display);font-size:clamp(32px,10vw,46px);font-weight:900;letter-spacing:.22em;line-height:1.35;margin:14px 0;padding-left:.22em;animation:rise 1.6s var(--ease) both;text-wrap:balance}
 .hint{margin-top:48px;font-size:14px;letter-spacing:.2em;color:var(--muted)}
-/* 標題畫面底部：先準備這關的語音 */
-.title-foot{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 18px calc(24px + var(--safe-b));text-align:center}
+/* 標題畫面底部：先準備這關的語音。和「輕觸畫面，開始」同一種字，不做成方框按鈕，免得破壞開幕的畫面 */
+.title-foot{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 18px calc(28px + var(--safe-b));text-align:center}
 .title-foot[hidden]{display:none}
-.title-foot .status{min-height:1.5em}
+.prep-btn{min-height:44px;padding:0 6px;background:none;border:0;border-radius:0;color:var(--brass);font-size:13px;letter-spacing:.24em;opacity:.75}
+.prep-btn::after{content:"";display:block;height:1px;margin-top:6px;background:linear-gradient(90deg,transparent,rgba(201,165,58,.55),transparent)}
+.prep-btn:active{opacity:1;transform:none}
+.title-foot .status{min-height:1.5em;font-size:12px;letter-spacing:.08em;color:var(--dim)}
 .caret{animation:blink 1.4s ease-in-out infinite}
 
 /* ---------- 朗讀：暗場的舞台 ---------- */
